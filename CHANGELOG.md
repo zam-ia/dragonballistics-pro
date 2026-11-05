@@ -2,6 +2,22 @@
 
 All notable changes to DragonBallistics Pro are recorded here.
 
+## 0.2.0 - 2026-11-05
+
+### Added
+
+- RK4 and semi-implicit Euler integrators with analytical validation and convergence tests.
+- Typed projectile simulation, configurable power conversion, gravity and two wind models.
+- Continuous collision detection for ground, terrain segments, circular targets and world bounds.
+- Safe time, iteration and invalid-numeric-state termination with warnings and errors.
+- Canvas trajectory, impact and apex rendering plus optional two-simulation comparison.
+- Persisted per-workspace physics controls with backward-compatible defaults.
+
+### Changed
+
+- Workbench now reports real flight time, range, maximum height and termination state.
+- Automated suite now covers the Phase 2 engine and visual controls.
+
 ## 0.1.0 - 2026-11-05
 
 ### Added
