@@ -1,0 +1,26 @@
+{
+  "name": "@dragonballistics/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@dragonballistics/physics": "workspace:*",
+    "@dragonballistics/shared": "workspace:*",
+    "dexie": "4.4.7",
+    "lucide-react": "1.69.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.5",
+    "zustand": "5.0.16"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.4",
+    "tailwindcss": "4.3.4",
+    "vite": "8.3.6"
+  }
+}

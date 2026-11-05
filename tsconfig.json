@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/physics" },
+    { "path": "./packages/mobiles" },
+    { "path": "./packages/calibration" },
+    { "path": "./packages/vision" },
+    { "path": "./apps/web" }
+  ]
+}

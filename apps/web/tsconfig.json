@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist/types",
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+  "references": [{ "path": "../../packages/shared" }, { "path": "../../packages/physics" }],
+  "include": ["src"]
+}
