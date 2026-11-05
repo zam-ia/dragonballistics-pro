@@ -2,8 +2,10 @@ import {
   AppPreferencesSchema,
   createDefaultWorkspaces,
   defaultPreferences,
+  SimulationControlsSchema,
   type AppPreferences,
   type ExportBundle,
+  type SimulationControls,
   type Vec2,
   type Workspace,
   type WorkspaceId,
@@ -22,6 +24,7 @@ interface LabState {
   setActiveWorkspace: (id: WorkspaceId) => void;
   renameActiveWorkspace: (name: string) => void;
   updateActivePoint: (kind: 'launch' | 'target', point: Vec2) => void;
+  updateActiveSimulation: (patch: Partial<SimulationControls>) => void;
   updatePreferences: (patch: Partial<AppPreferences>) => void;
   replaceFromImport: (bundle: ExportBundle) => Promise<void>;
   clearPersistenceError: () => void;
@@ -72,9 +75,7 @@ export const useLabStore = create<LabState>((set, get) => ({
           : 'workspace-1',
       });
 
-      if (parsedWorkspaces.length !== 4) {
-        await database.workspaces.bulkPut(initialWorkspaces);
-      }
+      await database.workspaces.bulkPut(validWorkspaces);
       await persistSettings(get());
     } catch (error) {
       set({
@@ -126,6 +127,24 @@ export const useLabStore = create<LabState>((set, get) => ({
         set({ persistenceError: error instanceof Error ? error.message : 'Error al guardar.' });
       });
     }
+  },
+
+  updateActiveSimulation: (patch) => {
+    const state = get();
+    const current = state.workspaces.find((workspace) => workspace.id === state.activeWorkspaceId);
+    if (!current) return;
+    const result = SimulationControlsSchema.safeParse({ ...current.simulation, ...patch });
+    if (!result.success) return;
+    const updatedAt = new Date().toISOString();
+    const changed: Workspace = { ...current, simulation: result.data, updatedAt };
+    set({
+      workspaces: state.workspaces.map((workspace) =>
+        workspace.id === state.activeWorkspaceId ? changed : workspace,
+      ),
+    });
+    void database.workspaces.put(changed).catch((error: unknown) => {
+      set({ persistenceError: error instanceof Error ? error.message : 'Error al guardar.' });
+    });
   },
 
   updatePreferences: (patch) => {
