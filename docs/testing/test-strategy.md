@@ -17,8 +17,13 @@ Vitest ejecuta funciones puras y esquemas:
 - residuos de calibracion;
 - tipos/tamaños de imagen;
 - importacion/exportacion versionada.
-
-Fase 2 añadira soluciones analiticas, convergencia de integrador, limites y terminacion.
+- RK4 frente a solucion analitica de aceleracion constante;
+- Euler semimplicito y convergencia al reducir `dt`;
+- descomposicion polar y modelos de viento;
+- angulos complementarios, alturas y gravedad cero;
+- colision continua con suelo, segmentos y objetivos circulares;
+- primer impacto, salida de limites y limites de tiempo/iteraciones;
+- potencia cero, entradas no finitas y estados numericos invalidos.
 
 ### Integracion
 
@@ -36,6 +41,9 @@ Playwright en Chromium verifica:
 4. recarga con persistencia IndexedDB;
 5. ruta desconocida con recuperacion;
 6. controles principales sin errores de pagina.
+7. recalculo al cambiar angulo, potencia y viento;
+8. comparacion de dos trayectorias;
+9. persistencia del modelo de viento y parametros de comparacion.
 
 ## Calidad estatica
 
@@ -64,6 +72,8 @@ marcan cumplidos hasta capturar mediciones repetibles.
 
 ## Evidencia de esta entrega
 
-La verificacion del 2026-11-05 aprobo 12 pruebas unitarias en 6 archivos y 2 recorridos E2E en
-Chromium. Lint, TypeScript, formato y build tambien aprobaron. El detalle reproducible esta en
-`docs/reports/phase-0-1-verification.md` y en la seccion “Verificacion” del roadmap.
+La verificacion de Fase 1 del 2026-11-05 aprobo 12 pruebas unitarias en 6 archivos y 2 recorridos E2E.
+Fase 2 eleva la suite a 37 pruebas en 10 archivos y agrega un tercer recorrido E2E. Los resultados
+numericos y comandos finales estan registrados en `docs/reports/phase-2-verification.md`. La puerta
+local concluyo con formato, lint, TypeScript, 37/37 pruebas antes y despues del build, build de
+produccion y 3/3 recorridos E2E aprobados.

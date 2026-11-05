@@ -6,7 +6,7 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 | ----------------------- | ---------- | ------------------------------------------------------- | ---------------------------------------------- |
 | 0. Investigacion y plan | Completado | referencias, arquitectura, modelos, riesgos y pruebas   | documentos revisables y decisiones registradas |
 | 1. Base del software    | Completado | monorepo, UI, rutas, persistencia, CI y contratos       | lint, TS, unitarias, build y E2E aprobados     |
-| 2. Motor fisico         | Pendiente  | RK4, Euler, fuerzas, trayectoria, colision y resultados | casos analiticos dentro de tolerancia          |
+| 2. Motor fisico         | Completado | RK4, Euler, fuerzas, trayectoria, colision y resultados | casos analiticos dentro de tolerancia          |
 | 3. Solucionador         | Pendiente  | muestreo, ranking y refinamiento                        | escenarios sinteticos reproducibles            |
 | 4. Moviles              | Pendiente  | perfiles con fuente y tipos de disparo                  | nombres/constantes verificados                 |
 | 5. Ambiente             | Pendiente  | viento vectorial y perfiles de gravedad                 | cambios explicables y probados                 |
@@ -31,8 +31,8 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 
 ## Siguiente incremento autorizado
 
-Despues de verificar Fase 1, la siguiente propuesta es Fase 2A: contratos de simulacion, solucion
-analitica de referencia, integrador RK4 y pruebas sin viento/terreno. No se inicia automaticamente.
+Despues de revisar y aprobar Fase 2, la siguiente propuesta es Fase 3: solucionador inverso con
+muestreo, ranking y refinamiento. No se inicia automaticamente.
 
 ## Verificacion de Fase 1
 
@@ -49,3 +49,19 @@ Ejecutada el 2026-11-05 en Windows con Node 24.14.1 y pnpm 11.25.0:
 
 No se observaron errores de pagina en los recorridos. Los avisos `NO_COLOR` emitidos por el entorno de
 Playwright no afectan el resultado ni provienen del codigo de la aplicacion.
+
+## Verificacion de Fase 2
+
+Ejecutada el 2026-11-05 en Windows con Node 24.14.1 y pnpm 11.25.0:
+
+- `pnpm format` y `pnpm format:check`: todos los archivos conformes con Prettier.
+- `pnpm lint`: 0 errores y 0 advertencias.
+- `pnpm typecheck`: `tsc -b` aprobado.
+- `pnpm test`: 10 archivos y 37 pruebas aprobadas antes del build.
+- `pnpm build`: Vite 8.3.6, 2,188 modulos transformados y build aprobado.
+- segundo `pnpm test`: 10 archivos y 37 pruebas aprobadas despues del build.
+- `pnpm test:e2e`: 3 recorridos Chromium aprobados.
+- QA visual: 1440 x 1000 y 390 x 844, incluida la comparacion de dos trayectorias.
+
+La evidencia matematica, los archivos y las limitaciones se detallan en
+`docs/reports/phase-2-verification.md`. La Fase 3 permanece pendiente y requiere aprobacion explicita.
