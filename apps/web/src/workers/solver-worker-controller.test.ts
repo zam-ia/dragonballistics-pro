@@ -86,13 +86,13 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
   it('cancels an active job and never accepts its late result', () => {
     const { controller, workers } = setup();
     const a = controller.start(input);
+    const oldHandler = workers[0]?.onmessage;
     expect(controller.cancel()).toBe(true);
     expect(workers[0]?.terminated).toBe(true);
     expect(workers[0]?.messages[1]).toEqual({ type: 'CANCEL', jobId: a });
     expect(controller.getSnapshot().state).toBe('cancelled');
     expect(controller.getSnapshot().cancelCallMilliseconds).not.toBeNull();
     // An artificial, retained callback from the old worker can never overwrite B.
-    const oldHandler = workers[0]?.onmessage;
     const b = controller.start(input);
     oldHandler?.({ data: { type: 'PROGRESS', jobId: a, progress } } as MessageEvent<unknown>);
     workers[1]?.emit({ type: 'PROGRESS', jobId: b, progress });
