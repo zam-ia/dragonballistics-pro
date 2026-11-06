@@ -2,21 +2,21 @@
 
 Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 
-| Fase                    | Estado     | Alcance                                                 | Puerta de salida                               |
-| ----------------------- | ---------- | ------------------------------------------------------- | ---------------------------------------------- |
-| 0. Investigacion y plan | Completado | referencias, arquitectura, modelos, riesgos y pruebas   | documentos revisables y decisiones registradas |
-| 1. Base del software    | Completado | monorepo, UI, rutas, persistencia, CI y contratos       | lint, TS, unitarias, build y E2E aprobados     |
-| 2. Motor fisico         | Completado | RK4, Euler, fuerzas, trayectoria, colision y resultados | casos analiticos dentro de tolerancia          |
-| 3. Solucionador         | Pendiente  | muestreo, ranking y refinamiento                        | escenarios sinteticos reproducibles            |
-| 4. Moviles              | Pendiente  | perfiles con fuente y tipos de disparo                  | nombres/constantes verificados                 |
-| 5. Ambiente             | Pendiente  | viento vectorial y perfiles de gravedad                 | cambios explicables y probados                 |
-| 6. UI/UX avanzada       | Pendiente  | inspeccion, zoom, comparacion e historial               | pruebas de teclado y rendimiento               |
-| 7. Imagenes guardadas   | Pendiente  | recorte, anotacion y deteccion con confianza            | fixtures y correccion manual                   |
-| 8. Calibracion          | Pendiente  | datasets, optimizacion y evaluacion                     | mejora fuera de muestra o rechazo              |
-| 9. Espacios completos   | Pendiente  | duplicar, reiniciar, escenario e historial              | migraciones y exportacion integral             |
-| 10. Metricas            | Pendiente  | RMSE, percentiles y segmentacion                        | separacion entrenamiento/evaluacion            |
-| 11. Windows/Tauri       | Pendiente  | ejecutable e instalador offline                         | instalacion limpia sin admin                   |
-| 12. Calidad final       | Pendiente  | rendimiento, seguridad y documentacion                  | matriz completa de aceptacion                  |
+| Fase                    | Estado        | Alcance                                                 | Puerta de salida                               |
+| ----------------------- | ------------- | ------------------------------------------------------- | ---------------------------------------------- |
+| 0. Investigacion y plan | Completado    | referencias, arquitectura, modelos, riesgos y pruebas   | documentos revisables y decisiones registradas |
+| 1. Base del software    | Completado    | monorepo, UI, rutas, persistencia, CI y contratos       | lint, TS, unitarias, build y E2E aprobados     |
+| 2. Motor fisico         | Completado    | RK4, Euler, fuerzas, trayectoria, colision y resultados | casos analiticos dentro de tolerancia          |
+| 3. Solucionador         | En desarrollo | evaluacion resumen, muestreo, ranking y refinamiento    | escenarios sinteticos reproducibles            |
+| 4. Moviles              | Pendiente     | perfiles con fuente y tipos de disparo                  | nombres/constantes verificados                 |
+| 5. Ambiente             | Pendiente     | viento vectorial y perfiles de gravedad                 | cambios explicables y probados                 |
+| 6. UI/UX avanzada       | Pendiente     | inspeccion, zoom, comparacion e historial               | pruebas de teclado y rendimiento               |
+| 7. Imagenes guardadas   | Pendiente     | recorte, anotacion y deteccion con confianza            | fixtures y correccion manual                   |
+| 8. Calibracion          | Pendiente     | datasets, optimizacion y evaluacion                     | mejora fuera de muestra o rechazo              |
+| 9. Espacios completos   | Pendiente     | duplicar, reiniciar, escenario e historial              | migraciones y exportacion integral             |
+| 10. Metricas            | Pendiente     | RMSE, percentiles y segmentacion                        | separacion entrenamiento/evaluacion            |
+| 11. Windows/Tauri       | Pendiente     | ejecutable e instalador offline                         | instalacion limpia sin admin                   |
+| 12. Calidad final       | Pendiente     | rendimiento, seguridad y documentacion                  | matriz completa de aceptacion                  |
 
 ## Riesgos activos
 
@@ -31,8 +31,16 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 
 ## Siguiente incremento autorizado
 
-Despues de revisar y aprobar Fase 2, la siguiente propuesta es Fase 3: solucionador inverso con
-muestreo, ranking y refinamiento. No se inicia automaticamente.
+Fase 3 fue autorizada el 2026-11-06. El primer incremento sera exclusivamente el nucleo de evaluacion
+`summary`, sus pruebas de paridad y benchmark frente al modo `full`. La busqueda, Worker e interfaz se
+implementaran en cambios posteriores y no se publicara un PR hasta contar con una primera
+implementacion verificable.
+
+Documentos de diseño:
+
+- `docs/specifications/inverse-solver-design.md`;
+- `docs/testing/inverse-solver-test-plan.md`;
+- `docs/decisions/0004-summary-evaluation-and-worker-solver.md`.
 
 ## Verificacion de Fase 1
 
