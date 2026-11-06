@@ -296,7 +296,6 @@ export function solveProjectile(
   let coarseEvaluations = 0;
   let refinementEvaluations = 0;
   let verificationEvaluations = 0;
-  let coarseMilliseconds: number;
   let refinementMilliseconds = 0;
   let phase: SolverPhase = 'coarse';
   let stopReason: SolverStopReason = 'completed';
@@ -384,7 +383,7 @@ export function solveProjectile(
     if (coarseEvaluations >= coarseLimit || !allowed()) break;
     evaluate(angle, power);
   }
-  coarseMilliseconds = elapsed() - coarseStart;
+  const coarseMilliseconds = elapsed() - coarseStart;
   phase = 'refinement';
   notify(true);
 
