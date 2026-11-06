@@ -1,4 +1,4 @@
-import type { SolverInput, SolverProgress } from '@dragonballistics/physics';
+import type { SolverInput, SolverProgress, SolverResult } from '@dragonballistics/physics';
 import { parseWorkerResponse } from './solver-protocol';
 import type { SolverWorkerRequest } from './solver-protocol';
 
