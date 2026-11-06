@@ -32,7 +32,7 @@ test('searches, compares verified arcs, visualizes and applies on explicit actio
   await expect(page.locator('canvas[data-inverse-overlay=hidden]')).toBeVisible();
   await panel.getByRole('button', { name: 'Mostrar trayectoria inversa' }).click();
   await panel.getByRole('button', { name: 'Aplicar esta solución' }).click();
-  await expect(page.getByLabel('Potencia')).toHaveValue('40');
+  await expect(page.getByLabel('Potencia', { exact: true })).toHaveValue('40');
   await expect(page.getByLabel('Angulo de lanzamiento')).not.toHaveValue(previousAngle);
 });
 
