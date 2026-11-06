@@ -308,7 +308,7 @@ export function solveProjectile(
     coarseEvaluations,
     refinementEvaluations,
     verificationEvaluations,
-    hitCount: entries.filter((e) => e.provisionalHit).length,
+    hitCount: entries.filter((e) => e.candidate.hit).length,
     elapsedMilliseconds: elapsed(),
   });
   const notify = (force = false) => {
@@ -333,11 +333,22 @@ export function solveProjectile(
     }
     return true;
   };
+  // Always keep a bounded number of slots for full simulation confirmations.
+  // The evaluator does not spend them; only the subsequent verifier may.
+  const reservedVerifications = Math.min(
+    Math.max(0, budgets.maximumEvaluations - 1),
+    Math.max(1, Math.min(input.requestedSolutions + 2, Math.ceil(budgets.maximumEvaluations * 0.1))),
+  );
+  const searchLimit = budgets.maximumEvaluations - reservedVerifications;
+  const searchAllowed = () => {
+    if (coarseEvaluations + refinementEvaluations >= searchLimit) return false;
+    return allowed();
+  };
   const evaluate = (angle: number, power: number): SearchEntry | null => {
     const key = identity(angle, power);
     const existing = cache.get(key);
     if (existing) return existing;
-    if (!allowed()) return null;
+    if (!searchAllowed()) return null;
     const summary = evaluateProjectileSummary(
       { ...input.simulation, launchAngleDegrees: angle, power },
       { targetId: input.targetId },
@@ -377,10 +388,10 @@ export function solveProjectile(
   // Reserve time and evaluations for refining and physically verifying impacts.
   const coarseLimit = Math.max(
     1,
-    Math.min(planningCap, Math.floor(budgets.maximumEvaluations * budgets.coarseFraction)),
+    Math.min(planningCap, searchLimit, Math.floor(budgets.maximumEvaluations * budgets.coarseFraction)),
   );
   for (const [angle, power] of coarsePoints(input.angleRange, input.powerRange)) {
-    if (coarseEvaluations >= coarseLimit || !allowed()) break;
+    if (coarseEvaluations >= coarseLimit || !searchAllowed()) break;
     evaluate(angle, power);
   }
   const coarseMilliseconds = elapsed() - coarseStart;
@@ -397,7 +408,7 @@ export function solveProjectile(
       let angleStep = angleWidth / 8;
       let powerStep = powerWidth / 8;
       for (let round = 0; round < budgets.refinementRounds; round += 1) {
-        if (!allowed()) break;
+        if (!searchAllowed()) break;
         let improved = false;
         const neighbors: Array<[number, number]> = [];
         for (const da of [-1, 0, 1]) {
@@ -432,13 +443,13 @@ export function solveProjectile(
             improved = true;
           }
         }
-        if (stopReason !== 'completed') break;
+        if (stopReason !== 'completed' || !searchAllowed()) break;
         if (!improved) {
           angleStep /= 2;
           powerStep /= 2;
         }
       }
-      if (stopReason !== 'completed') break;
+      if (stopReason !== 'completed' || !searchAllowed()) break;
     }
     refinementMilliseconds = elapsed() - refinementStart;
   }
@@ -474,6 +485,8 @@ export function solveProjectile(
     entry.candidate.maximumHeight = full.maximumHeight;
     notify();
   }
+  // If search stops at its reserved cap, this is a completed finite search;
+  // if the physical deadline or full evaluation limit fires, keep that cutoff.
   // Unverified summary hits remain approximations, never successful solutions.
   for (const entry of provisional) entry.provisionalHit = entry.candidate.hit;
   classifyArcs(provisional, input);
