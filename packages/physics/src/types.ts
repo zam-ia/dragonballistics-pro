@@ -167,6 +167,45 @@ export interface SimulationSummary {
   parametersUsed: SimulationParametersUsed;
 }
 
+export type TrajectorySamplingPolicy = 'legacy-subdivision' | 'polynomial-safe';
+
+export interface SimulationProfileOptions extends SummaryEvaluationOptions {
+  mode: 'full' | 'summary';
+  samplingPolicy: TrajectorySamplingPolicy;
+  collectMetrics?: boolean;
+}
+
+export interface SimulationPerformanceMetrics {
+  mainIntegrationCalls: number;
+  partialIntegrationCalls: number;
+  rk4MainEvaluations: number;
+  rk4PartialEvaluations: number;
+  stateAtFractionCalls: number;
+  stateCacheHits: number;
+  stateCacheMisses: number;
+  peakStateCacheEntries: number;
+  polynomialSamplersCreated: number;
+  polynomialControlSetsCreated: number;
+  polynomialPositionEvaluations: number;
+  conservativeGeometryAcceptances: number;
+  conservativeGeometryFallbacks: number;
+  trajectoryEventCalls: number;
+  flattenIntervalCalls: number;
+  flattenSubdivisions: number;
+  acceptedLeaves: number;
+  closestApproachSegments: number;
+  integrationMilliseconds: number;
+  collisionMilliseconds: number;
+  closestApproachMilliseconds: number;
+  retainedTrajectoryPoints: number;
+  approximateIntegratedStateObjects: number;
+}
+
+export interface ProfiledSimulationEvaluation {
+  result: SimulationResult | SimulationSummary;
+  metrics: SimulationPerformanceMetrics | null;
+}
+
 export interface CollisionCandidate {
   fraction: number;
   kind: ImpactKind;

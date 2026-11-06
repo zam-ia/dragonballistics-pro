@@ -4,9 +4,12 @@ import type {
   CircularTarget,
   CollisionCandidate,
   CollisionWorld,
+  SimulationPerformanceMetrics,
   TerrainSegment,
+  TrajectorySamplingPolicy,
   WorldBounds,
 } from './types';
+import { quarticChordDeviationBoundSquared } from './polynomial-path';
 
 const EPSILON = 1e-9;
 
@@ -36,6 +39,12 @@ export interface TrajectoryStepEvent {
   collision: CollisionCandidate | null;
   boundsExit: BoundsExitCandidate | null;
   closestApproach: TrajectoryTargetApproachCandidate | null;
+}
+
+export interface TrajectoryEventOptions {
+  proximityTargets?: readonly CircularTarget[];
+  samplingPolicy?: TrajectorySamplingPolicy;
+  metrics?: SimulationPerformanceMetrics;
 }
 
 export interface TrajectoryTargetApproachCandidate {
@@ -101,12 +110,24 @@ export function findFirstTrajectoryEvent(
   positionAtFraction: (fraction: number) => Vec2,
   world: CollisionWorld,
   bounds: WorldBounds,
-  proximityTargets: readonly CircularTarget[] = [],
+  options: TrajectoryEventOptions = {},
 ): TrajectoryStepEvent {
+  const proximityTargets = options.proximityTargets ?? [];
+  const samplingPolicy = options.samplingPolicy ?? 'legacy-subdivision';
+  if (options.metrics) options.metrics.trajectoryEventCalls += 1;
   const start = positionAtFraction(0);
   const end = positionAtFraction(1);
   const positionTolerance = collisionPositionTolerance(start, end, world, bounds);
-  const samples = flattenTrajectory(positionAtFraction, start, end, positionTolerance);
+  const samples = flattenTrajectory(
+    positionAtFraction,
+    start,
+    end,
+    positionTolerance,
+    world,
+    bounds,
+    samplingPolicy,
+    options.metrics,
+  );
   let closestApproach: TrajectoryTargetApproachCandidate | null = null;
 
   for (let index = 0; index < samples.length - 1; index += 1) {
@@ -140,6 +161,7 @@ export function findFirstTrajectoryEvent(
       leafEnd.fraction,
     );
     if (proximityTargets.length > 0 && stoppingFraction >= leafStart.fraction) {
+      const proximityStart = options.metrics ? performance.now() : 0;
       const stoppingPoint =
         Math.abs(stoppingFraction - leafEnd.fraction) <= EPSILON
           ? leafEnd.point
@@ -165,6 +187,10 @@ export function findFirstTrajectoryEvent(
             spatialTolerance: positionTolerance,
           });
         }
+      }
+      if (options.metrics) {
+        options.metrics.closestApproachSegments += 1;
+        options.metrics.closestApproachMilliseconds += performance.now() - proximityStart;
       }
     }
 
@@ -329,6 +355,10 @@ function flattenTrajectory(
   start: Vec2,
   end: Vec2,
   tolerance: number,
+  world: CollisionWorld,
+  bounds: WorldBounds,
+  samplingPolicy: TrajectorySamplingPolicy,
+  metrics: SimulationPerformanceMetrics | undefined,
 ): PathSample[] {
   const samples: PathSample[] = [{ fraction: 0, point: start }];
   flattenInterval(
@@ -337,6 +367,10 @@ function flattenTrajectory(
     0,
     positionAtFraction,
     tolerance,
+    world,
+    bounds,
+    samplingPolicy,
+    metrics,
     samples,
   );
   return samples;
@@ -348,8 +382,13 @@ function flattenInterval(
   depth: number,
   positionAtFraction: (fraction: number) => Vec2,
   tolerance: number,
+  world: CollisionWorld,
+  bounds: WorldBounds,
+  samplingPolicy: TrajectorySamplingPolicy,
+  metrics: SimulationPerformanceMetrics | undefined,
   output: PathSample[],
 ) {
+  if (metrics) metrics.flattenIntervalCalls += 1;
   const span = end.fraction - start.fraction;
   const quarterFraction = start.fraction + span * 0.25;
   const middleFraction = start.fraction + span * 0.5;
@@ -357,23 +396,142 @@ function flattenInterval(
   const quarter = positionAtFraction(quarterFraction);
   const middle = positionAtFraction(middleFraction);
   const threeQuarter = positionAtFraction(threeQuarterFraction);
-  const flatness = Math.max(
-    pointDistance(quarter, interpolatePoint(start.point, end.point, 0.25)),
-    pointDistance(middle, interpolatePoint(start.point, end.point, 0.5)),
-    pointDistance(threeQuarter, interpolatePoint(start.point, end.point, 0.75)),
+  const quarterChord = interpolatePoint(start.point, end.point, 0.25);
+  const middleChord = interpolatePoint(start.point, end.point, 0.5);
+  const threeQuarterChord = interpolatePoint(start.point, end.point, 0.75);
+  const quarterDeviationX = quarter.x - quarterChord.x;
+  const quarterDeviationY = quarter.y - quarterChord.y;
+  const middleDeviationX = middle.x - middleChord.x;
+  const middleDeviationY = middle.y - middleChord.y;
+  const threeQuarterDeviationX = threeQuarter.x - threeQuarterChord.x;
+  const threeQuarterDeviationY = threeQuarter.y - threeQuarterChord.y;
+  const toleranceSquared = tolerance * tolerance;
+  const flatnessSquared = Math.max(
+    quarterDeviationX * quarterDeviationX + quarterDeviationY * quarterDeviationY,
+    middleDeviationX * middleDeviationX + middleDeviationY * middleDeviationY,
+    threeQuarterDeviationX * threeQuarterDeviationX +
+      threeQuarterDeviationY * threeQuarterDeviationY,
   );
+  const quarticBoundSquared =
+    samplingPolicy === 'polynomial-safe' && span > COLLISION_NUMERICS.maximumLeafFraction
+      ? quarticChordDeviationBoundSquared(start.point, quarter, middle, threeQuarter, end.point)
+      : null;
+  const curveTubeMayContainEvent =
+    quarticBoundSquared !== null &&
+    quarticBoundSquared <= toleranceSquared &&
+    trajectoryTubeMayContainEvent(
+      start.point,
+      end.point,
+      Math.sqrt(quarticBoundSquared) + COLLISION_NUMERICS.minimumPositionTolerance,
+      world,
+      bounds,
+    );
+  if (metrics && quarticBoundSquared !== null && quarticBoundSquared <= toleranceSquared) {
+    if (curveTubeMayContainEvent) metrics.conservativeGeometryFallbacks += 1;
+    else metrics.conservativeGeometryAcceptances += 1;
+  }
   const mustSplit =
     depth < COLLISION_NUMERICS.maximumSubdivisionDepth &&
-    (span > COLLISION_NUMERICS.maximumLeafFraction || flatness > tolerance);
+    (samplingPolicy === 'polynomial-safe'
+      ? span <= COLLISION_NUMERICS.maximumLeafFraction
+        ? flatnessSquared > toleranceSquared
+        : (quarticBoundSquared ?? Number.POSITIVE_INFINITY) > toleranceSquared ||
+          curveTubeMayContainEvent
+      : span > COLLISION_NUMERICS.maximumLeafFraction || flatnessSquared > toleranceSquared);
 
   if (mustSplit) {
+    if (metrics) metrics.flattenSubdivisions += 1;
     const middleSample = { fraction: middleFraction, point: middle };
-    flattenInterval(start, middleSample, depth + 1, positionAtFraction, tolerance, output);
-    flattenInterval(middleSample, end, depth + 1, positionAtFraction, tolerance, output);
+    flattenInterval(
+      start,
+      middleSample,
+      depth + 1,
+      positionAtFraction,
+      tolerance,
+      world,
+      bounds,
+      samplingPolicy,
+      metrics,
+      output,
+    );
+    flattenInterval(
+      middleSample,
+      end,
+      depth + 1,
+      positionAtFraction,
+      tolerance,
+      world,
+      bounds,
+      samplingPolicy,
+      metrics,
+      output,
+    );
     return;
   }
 
+  if (metrics) metrics.acceptedLeaves += 1;
   output.push(end);
+}
+
+/**
+ * Returns true unless the complete curve tube can be proven disjoint from collision geometry and
+ * world boundaries. A true result keeps the legacy adaptive subdivision; it is never a rejection.
+ */
+function trajectoryTubeMayContainEvent(
+  start: Vec2,
+  end: Vec2,
+  radius: number,
+  world: CollisionWorld,
+  bounds: WorldBounds,
+): boolean {
+  const minimumX = Math.min(start.x, end.x) - radius;
+  const maximumX = Math.max(start.x, end.x) + radius;
+  const minimumY = Math.min(start.y, end.y) - radius;
+  const maximumY = Math.max(start.y, end.y) + radius;
+
+  if (
+    minimumX <= bounds.minimumX ||
+    maximumX >= bounds.maximumX ||
+    minimumY <= bounds.minimumY ||
+    maximumY >= bounds.maximumY
+  ) {
+    return true;
+  }
+  if (world.groundY !== undefined && world.groundY >= minimumY && world.groundY <= maximumY) {
+    return true;
+  }
+  for (const target of world.targets) {
+    const contactRadius = target.radius + radius;
+    if (pointSegmentDistanceSquared(target.center, start, end) <= contactRadius * contactRadius) {
+      return true;
+    }
+  }
+  for (const terrain of world.terrain) {
+    if (segmentDistanceSquared(start, end, terrain.start, terrain.end) <= radius * radius)
+      return true;
+  }
+  return false;
+}
+
+function segmentDistanceSquared(a: Vec2, b: Vec2, c: Vec2, d: Vec2): number {
+  if (segmentIntersectionFraction(a, b, { start: c, end: d }) !== null) return 0;
+  return Math.min(
+    pointSegmentDistanceSquared(a, c, d),
+    pointSegmentDistanceSquared(b, c, d),
+    pointSegmentDistanceSquared(c, a, b),
+    pointSegmentDistanceSquared(d, a, b),
+  );
+}
+
+function pointSegmentDistanceSquared(point: Vec2, start: Vec2, end: Vec2): number {
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+  if (lengthSquared <= EPSILON) return pointDistanceSquared(point, start);
+  const fraction = clampFraction(
+    ((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) / lengthSquared,
+  );
+  return pointDistanceSquared(point, interpolatePoint(start, end, fraction));
 }
 
 function earliestRefinedCollision(

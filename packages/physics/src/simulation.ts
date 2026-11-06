@@ -7,6 +7,7 @@ import {
 import type { TrajectoryTargetApproachCandidate } from './collisions';
 import { createAccelerationField } from './forces';
 import { integrateStep } from './integrators';
+import { evaluateQuarticBernstein, quarticBernsteinControlsFromSamples } from './polynomial-path';
 import { powerToInitialSpeed } from './power';
 import type {
   CollisionCandidate,
@@ -14,13 +15,17 @@ import type {
   ClosestTargetApproach,
   ImpactResult,
   KinematicState,
+  ProfiledSimulationEvaluation,
   SimulationInput,
   SimulationMessage,
+  SimulationPerformanceMetrics,
+  SimulationProfileOptions,
   SimulationResult,
   SimulationSummary,
   SimulationStatus,
   SummaryEvaluationOptions,
   SimulationTerminationReason,
+  TrajectorySamplingPolicy,
   TrajectoryPoint,
 } from './types';
 import { validateSimulationInput } from './validation';
@@ -29,26 +34,15 @@ import { degreesToRadians } from './wind';
 const EPSILON = 1e-10;
 
 export function simulateProjectile(input: SimulationInput): SimulationResult {
-  const result = runSimulation(input, {
-    captureTrajectory: true,
-    proximityTargets: [],
-    additionalErrors: [],
-  });
-  return {
-    status: result.status,
-    terminationReason: result.terminationReason,
-    trajectory: result.trajectory ?? [result.finalState],
-    finalPosition: result.finalState.position,
-    impact: result.impact,
-    flightTimeSeconds: result.flightTimeSeconds,
-    horizontalRange: result.horizontalRange,
-    maximumHeight: result.maximumHeight,
-    apexPoint: result.apexPoint,
-    iterations: result.iterations,
-    warnings: result.warnings,
-    errors: result.errors,
-    parametersUsed: result.parametersUsed,
-  };
+  return toSimulationResult(
+    runSimulation(input, {
+      captureTrajectory: true,
+      proximityTargets: [],
+      additionalErrors: [],
+      samplingPolicy: 'polynomial-safe',
+      metrics: null,
+    }),
+  );
 }
 
 export function evaluateProjectileSummary(
@@ -60,28 +54,43 @@ export function evaluateProjectileSummary(
     captureTrajectory: false,
     proximityTargets: targets,
     additionalErrors: errors,
+    samplingPolicy: 'polynomial-safe',
+    metrics: null,
   });
-  return {
-    status: result.status,
-    terminationReason: result.terminationReason,
-    finalState: result.finalState,
-    impact: result.impact,
-    flightTimeSeconds: result.flightTimeSeconds,
-    horizontalRange: result.horizontalRange,
-    maximumHeight: result.maximumHeight,
-    apexPoint: result.apexPoint,
-    closestApproach: result.closestApproach,
-    iterations: result.iterations,
-    warnings: result.warnings,
-    errors: result.errors,
-    parametersUsed: result.parametersUsed,
-  };
+  return toSimulationSummary(result);
+}
+
+export function profileProjectileEvaluation(
+  input: SimulationInput,
+  options: SimulationProfileOptions,
+): ProfiledSimulationEvaluation {
+  const metrics = options.collectMetrics === false ? null : createPerformanceMetrics();
+  const selection =
+    options.mode === 'summary'
+      ? resolveProximityTargets(input.collisions.targets, options.targetId)
+      : { targets: [], errors: [] };
+  const result = runSimulation(input, {
+    captureTrajectory: options.mode === 'full',
+    proximityTargets: selection.targets,
+    additionalErrors: selection.errors,
+    samplingPolicy: options.samplingPolicy,
+    metrics,
+  });
+  const publicResult =
+    options.mode === 'full' ? toSimulationResult(result) : toSimulationSummary(result);
+  if (metrics) {
+    metrics.retainedTrajectoryPoints =
+      'trajectory' in publicResult ? publicResult.trajectory.length : 0;
+  }
+  return { result: publicResult, metrics };
 }
 
 interface RunOptions {
   captureTrajectory: boolean;
   proximityTargets: readonly CircularTarget[];
   additionalErrors: SimulationMessage[];
+  samplingPolicy: TrajectorySamplingPolicy;
+  metrics: SimulationPerformanceMetrics | null;
 }
 
 interface CoreSimulationResult {
@@ -252,7 +261,14 @@ function runSimulation(input: SimulationInput, options: RunOptions): CoreSimulat
     }
 
     const timeStep = Math.min(input.timeStepSeconds, remainingTime);
-    const nextState = integrateStep(input.integrator, state, timeStep, accelerationField);
+    const nextState = integrateForRun(
+      input.integrator,
+      state,
+      timeStep,
+      accelerationField,
+      'main',
+      options.metrics,
+    );
     if (!kinematicStateIsFinite(nextState)) {
       return createResult({
         input,
@@ -277,22 +293,47 @@ function runSimulation(input: SimulationInput, options: RunOptions): CoreSimulat
       [1, nextState],
     ]);
     const stateAtFraction = (fraction: number) => {
+      if (options.metrics) options.metrics.stateAtFractionCalls += 1;
       const cached = stateCache.get(fraction);
-      if (cached) return cached;
-      const partial = partialStateAtFraction(state, timeStep, fraction, input, accelerationField);
+      if (cached) {
+        if (options.metrics) options.metrics.stateCacheHits += 1;
+        return cached;
+      }
+      if (options.metrics) options.metrics.stateCacheMisses += 1;
+      const partial = partialStateAtFraction(
+        state,
+        timeStep,
+        fraction,
+        input,
+        accelerationField,
+        options.metrics,
+      );
       stateCache.set(fraction, partial);
+      if (options.metrics) {
+        options.metrics.peakStateCacheEntries = Math.max(
+          options.metrics.peakStateCacheEntries,
+          stateCache.size,
+        );
+      }
       return partial;
     };
+    const positionAtFraction =
+      options.samplingPolicy === 'polynomial-safe'
+        ? createPolynomialPositionEvaluator(state, nextState, stateAtFraction, options.metrics)
+        : (fraction: number) => stateAtFraction(fraction).position;
+    const collisionStart = options.metrics ? performance.now() : 0;
     const {
       collision,
       boundsExit,
       closestApproach: stepClosestApproach,
-    } = findFirstTrajectoryEvent(
-      (fraction) => stateAtFraction(fraction).position,
-      input.collisions,
-      input.bounds,
-      options.proximityTargets,
-    );
+    } = findFirstTrajectoryEvent(positionAtFraction, input.collisions, input.bounds, {
+      proximityTargets: options.proximityTargets,
+      samplingPolicy: options.samplingPolicy,
+      ...(options.metrics ? { metrics: options.metrics } : {}),
+    });
+    if (options.metrics) {
+      options.metrics.collisionMilliseconds += performance.now() - collisionStart;
+    }
     if (stepClosestApproach) {
       closestApproach = nearerClosestApproach(
         closestApproach,
@@ -310,6 +351,7 @@ function runSimulation(input: SimulationInput, options: RunOptions): CoreSimulat
       stoppingFraction,
       input,
       accelerationField,
+      options.metrics,
     );
     if (apexCandidate && apexCandidate.position.y > apexPoint.position.y) apexPoint = apexCandidate;
 
@@ -389,6 +431,7 @@ function apexWithinStep(
   maximumFraction: number,
   input: SimulationInput,
   accelerationField: ReturnType<typeof createAccelerationField>,
+  metrics: SimulationPerformanceMetrics | null,
 ): TrajectoryPoint | null {
   if (state.velocity.y <= 0 || nextState.velocity.y > 0) return null;
   const denominator = state.velocity.y - nextState.velocity.y;
@@ -396,7 +439,7 @@ function apexWithinStep(
   const fraction = state.velocity.y / denominator;
   if (fraction < 0 || fraction > maximumFraction) return null;
   return toTrajectoryPoint(
-    partialStateAtFraction(state, timeStep, fraction, input, accelerationField),
+    partialStateAtFraction(state, timeStep, fraction, input, accelerationField, metrics),
   );
 }
 
@@ -406,10 +449,139 @@ function partialStateAtFraction(
   fraction: number,
   input: SimulationInput,
   accelerationField: ReturnType<typeof createAccelerationField>,
+  metrics: SimulationPerformanceMetrics | null,
 ): KinematicState {
   if (fraction <= EPSILON)
     return { ...state, position: { ...state.position }, velocity: { ...state.velocity } };
-  return integrateStep(input.integrator, state, timeStep * fraction, accelerationField);
+  return integrateForRun(
+    input.integrator,
+    state,
+    timeStep * fraction,
+    accelerationField,
+    'partial',
+    metrics,
+  );
+}
+
+function integrateForRun(
+  integrator: SimulationInput['integrator'],
+  state: Readonly<KinematicState>,
+  timeStepSeconds: number,
+  accelerationField: ReturnType<typeof createAccelerationField>,
+  category: 'main' | 'partial',
+  metrics: SimulationPerformanceMetrics | null,
+): KinematicState {
+  const start = metrics ? performance.now() : 0;
+  const result = integrateStep(integrator, state, timeStepSeconds, accelerationField);
+  if (metrics) {
+    metrics.integrationMilliseconds += performance.now() - start;
+    if (category === 'main') {
+      metrics.mainIntegrationCalls += 1;
+      if (integrator === 'rk4') metrics.rk4MainEvaluations += 1;
+    } else {
+      metrics.partialIntegrationCalls += 1;
+      if (integrator === 'rk4') metrics.rk4PartialEvaluations += 1;
+    }
+    metrics.approximateIntegratedStateObjects += integrator === 'rk4' ? 4 : 1;
+  }
+  return result;
+}
+
+function createPolynomialPositionEvaluator(
+  state: KinematicState,
+  nextState: KinematicState,
+  stateAtFraction: (fraction: number) => KinematicState,
+  metrics: SimulationPerformanceMetrics | null,
+): (fraction: number) => Vec2 {
+  const quarter = stateAtFraction(0.25).position;
+  const middle = stateAtFraction(0.5).position;
+  const threeQuarter = stateAtFraction(0.75).position;
+  let controls: ReturnType<typeof quarticBernsteinControlsFromSamples> | null = null;
+  if (metrics) metrics.polynomialSamplersCreated += 1;
+
+  return (fraction: number) => {
+    if (metrics) metrics.polynomialPositionEvaluations += 1;
+    if (fraction <= EPSILON) return state.position;
+    if (fraction >= 1 - EPSILON) return nextState.position;
+    if (fraction === 0.25) return quarter;
+    if (fraction === 0.5) return middle;
+    if (fraction === 0.75) return threeQuarter;
+    if (!controls) {
+      controls = quarticBernsteinControlsFromSamples(
+        state.position,
+        quarter,
+        middle,
+        threeQuarter,
+        nextState.position,
+      );
+      if (metrics) metrics.polynomialControlSetsCreated += 1;
+    }
+    return evaluateQuarticBernstein(controls, fraction);
+  };
+}
+
+function toSimulationResult(result: CoreSimulationResult): SimulationResult {
+  return {
+    status: result.status,
+    terminationReason: result.terminationReason,
+    trajectory: result.trajectory ?? [result.finalState],
+    finalPosition: result.finalState.position,
+    impact: result.impact,
+    flightTimeSeconds: result.flightTimeSeconds,
+    horizontalRange: result.horizontalRange,
+    maximumHeight: result.maximumHeight,
+    apexPoint: result.apexPoint,
+    iterations: result.iterations,
+    warnings: result.warnings,
+    errors: result.errors,
+    parametersUsed: result.parametersUsed,
+  };
+}
+
+function toSimulationSummary(result: CoreSimulationResult): SimulationSummary {
+  return {
+    status: result.status,
+    terminationReason: result.terminationReason,
+    finalState: result.finalState,
+    impact: result.impact,
+    flightTimeSeconds: result.flightTimeSeconds,
+    horizontalRange: result.horizontalRange,
+    maximumHeight: result.maximumHeight,
+    apexPoint: result.apexPoint,
+    closestApproach: result.closestApproach,
+    iterations: result.iterations,
+    warnings: result.warnings,
+    errors: result.errors,
+    parametersUsed: result.parametersUsed,
+  };
+}
+
+function createPerformanceMetrics(): SimulationPerformanceMetrics {
+  return {
+    mainIntegrationCalls: 0,
+    partialIntegrationCalls: 0,
+    rk4MainEvaluations: 0,
+    rk4PartialEvaluations: 0,
+    stateAtFractionCalls: 0,
+    stateCacheHits: 0,
+    stateCacheMisses: 0,
+    peakStateCacheEntries: 0,
+    polynomialSamplersCreated: 0,
+    polynomialControlSetsCreated: 0,
+    polynomialPositionEvaluations: 0,
+    conservativeGeometryAcceptances: 0,
+    conservativeGeometryFallbacks: 0,
+    trajectoryEventCalls: 0,
+    flattenIntervalCalls: 0,
+    flattenSubdivisions: 0,
+    acceptedLeaves: 0,
+    closestApproachSegments: 0,
+    integrationMilliseconds: 0,
+    collisionMilliseconds: 0,
+    closestApproachMilliseconds: 0,
+    retainedTrajectoryPoints: 0,
+    approximateIntegratedStateObjects: 0,
+  };
 }
 
 function createResult(options: {
