@@ -19,7 +19,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -32,6 +32,7 @@
     "eslint": "10.14.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
+    "fake-indexeddb": "6.2.7",
     "jsdom": "31.0.0",
     "prettier": "3.9.10",
     "typescript": "6.0.3",

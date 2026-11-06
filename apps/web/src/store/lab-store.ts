@@ -31,6 +31,8 @@ interface LabState {
 }
 
 const initialWorkspaces = createDefaultWorkspaces();
+const workspaceWriteQueues = new Map<WorkspaceId, Promise<void>>();
+let settingsWriteQueue: Promise<void> = Promise.resolve();
 
 function persistSettings(state: Pick<LabState, 'activeWorkspaceId' | 'preferences'>) {
   const settings: SettingsRecord = {
@@ -38,7 +40,56 @@ function persistSettings(state: Pick<LabState, 'activeWorkspaceId' | 'preference
     activeWorkspaceId: state.activeWorkspaceId,
     preferences: state.preferences,
   };
-  return database.settings.put(settings);
+  const write = settingsWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      await database.settings.put(settings);
+    });
+  settingsWriteQueue = write;
+  return write;
+}
+
+function persistWorkspace(workspace: Workspace) {
+  const previous = workspaceWriteQueues.get(workspace.id) ?? Promise.resolve();
+  const write = previous
+    .catch(() => undefined)
+    .then(async () => {
+      await database.workspaces.put(workspace);
+    });
+  workspaceWriteQueues.set(workspace.id, write);
+  void write.then(
+    () => clearCompletedWorkspaceWrite(workspace.id, write),
+    () => clearCompletedWorkspaceWrite(workspace.id, write),
+  );
+  return write;
+}
+
+function clearCompletedWorkspaceWrite(id: WorkspaceId, write: Promise<void>) {
+  if (workspaceWriteQueues.get(id) === write) workspaceWriteQueues.delete(id);
+}
+
+export async function waitForPendingPersistence() {
+  await Promise.all([
+    settingsWriteQueue.catch(() => undefined),
+    ...[...workspaceWriteQueues.values()].map((write) => write.catch(() => undefined)),
+  ]);
+}
+
+export function recoverStoredWorkspaces(
+  storedRecords: readonly unknown[],
+  defaults = createDefaultWorkspaces(),
+): Workspace[] {
+  return defaults.map((fallback) => {
+    const stored = storedRecords.find(
+      (record) =>
+        typeof record === 'object' &&
+        record !== null &&
+        'id' in record &&
+        record.id === fallback.id,
+    );
+    const parsed = WorkspaceSchema.safeParse(stored);
+    return parsed.success ? parsed.data : fallback;
+  });
 }
 
 export const useLabStore = create<LabState>((set, get) => ({
@@ -56,11 +107,7 @@ export const useLabStore = create<LabState>((set, get) => ({
         database.workspaces.toArray(),
         database.settings.get('app'),
       ]);
-      const parsedWorkspaces = storedWorkspaces
-        .map((workspace) => WorkspaceSchema.safeParse(workspace))
-        .filter((result) => result.success)
-        .map((result) => result.data);
-      const validWorkspaces = parsedWorkspaces.length === 4 ? parsedWorkspaces : initialWorkspaces;
+      const validWorkspaces = recoverStoredWorkspaces(storedWorkspaces);
       const preferencesResult = AppPreferencesSchema.safeParse(storedSettings?.preferences);
       const activeWorkspaceExists = validWorkspaces.some(
         (workspace) => workspace.id === storedSettings?.activeWorkspaceId,
@@ -106,7 +153,7 @@ export const useLabStore = create<LabState>((set, get) => ({
     });
     set({ workspaces });
     if (changed) {
-      void database.workspaces.put(changed).catch((error: unknown) => {
+      void persistWorkspace(changed).catch((error: unknown) => {
         set({ persistenceError: error instanceof Error ? error.message : 'Error al guardar.' });
       });
     }
@@ -123,7 +170,7 @@ export const useLabStore = create<LabState>((set, get) => ({
     });
     set({ workspaces });
     if (changed) {
-      void database.workspaces.put(changed).catch((error: unknown) => {
+      void persistWorkspace(changed).catch((error: unknown) => {
         set({ persistenceError: error instanceof Error ? error.message : 'Error al guardar.' });
       });
     }
@@ -142,7 +189,7 @@ export const useLabStore = create<LabState>((set, get) => ({
         workspace.id === state.activeWorkspaceId ? changed : workspace,
       ),
     });
-    void database.workspaces.put(changed).catch((error: unknown) => {
+    void persistWorkspace(changed).catch((error: unknown) => {
       set({ persistenceError: error instanceof Error ? error.message : 'Error al guardar.' });
     });
   },
@@ -157,6 +204,7 @@ export const useLabStore = create<LabState>((set, get) => ({
   },
 
   replaceFromImport: async (bundle) => {
+    await waitForPendingPersistence();
     await database.transaction('rw', database.workspaces, database.settings, async () => {
       await database.workspaces.clear();
       await database.workspaces.bulkPut(bundle.workspaces);

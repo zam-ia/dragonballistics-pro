@@ -1,5 +1,5 @@
 import type { Vec2 } from '@dragonballistics/shared';
-import { findBoundsExit, findFirstCollision } from './collisions';
+import { findFirstCollision, findFirstTrajectoryEvent } from './collisions';
 import { createAccelerationField } from './forces';
 import { integrateStep } from './integrators';
 import { powerToInitialSpeed } from './power';
@@ -159,8 +159,22 @@ export function simulateProjectile(input: SimulationInput): SimulationResult {
       });
     }
 
-    const collision = findFirstCollision(state.position, nextState.position, input.collisions);
-    const boundsExit = findBoundsExit(state.position, nextState.position, input.bounds);
+    const stateCache = new Map<number, KinematicState>([
+      [0, state],
+      [1, nextState],
+    ]);
+    const stateAtFraction = (fraction: number) => {
+      const cached = stateCache.get(fraction);
+      if (cached) return cached;
+      const partial = partialStateAtFraction(state, timeStep, fraction, input, accelerationField);
+      stateCache.set(fraction, partial);
+      return partial;
+    };
+    const { collision, boundsExit } = findFirstTrajectoryEvent(
+      (fraction) => stateAtFraction(fraction).position,
+      input.collisions,
+      input.bounds,
+    );
     const collisionFirst =
       collision !== null && (boundsExit === null || collision.fraction <= boundsExit.fraction);
     const stoppingFraction = collisionFirst ? collision.fraction : (boundsExit?.fraction ?? 1);
@@ -176,13 +190,7 @@ export function simulateProjectile(input: SimulationInput): SimulationResult {
     if (apexCandidate && apexCandidate.position.y > apexPoint.position.y) apexPoint = apexCandidate;
 
     if (collisionFirst && collision) {
-      const finalState = partialStateAtFraction(
-        state,
-        timeStep,
-        collision.fraction,
-        input,
-        accelerationField,
-      );
+      const finalState = stateAtFraction(collision.fraction);
       finalState.position = collision.point;
       const finalPoint = toTrajectoryPoint(finalState);
       appendUniquePoint(trajectory, finalPoint);
@@ -203,13 +211,7 @@ export function simulateProjectile(input: SimulationInput): SimulationResult {
     }
 
     if (boundsExit) {
-      const finalState = partialStateAtFraction(
-        state,
-        timeStep,
-        boundsExit.fraction,
-        input,
-        accelerationField,
-      );
+      const finalState = stateAtFraction(boundsExit.fraction);
       finalState.position = boundsExit.point;
       const finalPoint = toTrajectoryPoint(finalState);
       appendUniquePoint(trajectory, finalPoint);
