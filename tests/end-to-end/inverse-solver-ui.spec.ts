@@ -11,6 +11,13 @@ test('solver panel validation and responsive layouts', async ({ page }) => {
     await expect(panel.getByRole('heading', { name: 'SOLUCIONADOR INVERSO' })).toBeVisible();
     await expect(panel.getByLabel('Objetivo del solucionador')).toHaveValue('workspace-target');
     await expect(panel.getByText('10.00 u')).toBeVisible();
+    if (view.name === 'mobile') {
+      const searchButton = await panel.getByRole('button', { name: 'Buscar soluciones' }).boundingBox();
+      const cancelButton = await panel.getByRole('button', { name: 'Cancelar búsqueda' }).boundingBox();
+      expect(searchButton).not.toBeNull();
+      expect(cancelButton).not.toBeNull();
+      expect(cancelButton!.y).toBeGreaterThanOrEqual(searchButton!.y + searchButton!.height);
+    }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await page.screenshot({
