@@ -1,0 +1,33 @@
+name: Format inverse solver report
+on:
+  push:
+    branches:
+      - feature/inverse-solver
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/inverse-solver
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write docs/reports/inverse-solver-phase-3b.md
+      - name: Commit formatted report
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/reports/inverse-solver-phase-3b.md
+            git commit -m "style(docs): format measured solver report"
+            git push origin HEAD:feature/inverse-solver
+          fi
