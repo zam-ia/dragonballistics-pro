@@ -31,11 +31,12 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 
 ## Siguiente incremento autorizado
 
-Fase 3A implemento el nucleo de evaluacion `summary`. Fase 3A.1 optimizo el nucleo compartido mediante
-reutilizacion cuartica segura, agrego perfilado y benchmark A/B y mantuvo la paridad fisica. La
-busqueda, Worker e interfaz permanecen fuera de este incremento. Fase 3B fue autorizada y su solucionador puro esta implementado en `packages/physics/src/solver/`,
-con tests y benchmark independientes. Permanece en revision y sin merge. La Fase 3C (Worker)
-y 3D (interfaz) no estan autorizadas en este incremento.
+Fases 3A y 3A.1: evaluador `summary` y optimizacion validados.
+Fase 3B: solucionador inverso puro, con ranking, refinamiento y verificacion completa.
+Fase 3C: Worker dedicado y controlador de ciclo de vida, cancelacion real
+mediante `terminate()`, guardas de mensajes y aislamiento de trabajos.
+Esta rama permanece en desarrollo y el PR #2 sigue draft sin merge.
+La interfaz visual Fase 3D no esta autorizada ni implementada.
 
 Documentos de diseño:
 
@@ -45,6 +46,7 @@ Documentos de diseño:
 - `docs/reports/physics-summary-benchmark-2026-11-06.md`.
 - `docs/reports/physics-optimization-2026-11-06.md`.
 - `docs/reports/inverse-solver-phase-3b.md`.
+- `docs/decisions/0005-worker-isolation-and-hard-cancellation.md`.
 
 ## Verificacion de Fase 1
 
