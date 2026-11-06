@@ -1,14 +1,15 @@
 import {
-  createDefaultSimulationInput,
   simulateProjectile,
   vectorBetween,
-  type SimulationInput,
   type SimulationResult,
+  type SolverCandidate,
 } from '@dragonballistics/physics';
 import type { SimulationControls, Vec2 } from '@dragonballistics/shared';
 import { Activity, Clock3, Gauge, Info, Mountain, Orbit, Wind } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { GeometryCanvas } from '../features/workbench/GeometryCanvas';
+import { InverseSolverPanel, isConfirmedHit } from '../features/workbench/InverseSolverPanel';
+import { buildSimulationInput, solverScenarioSignature } from '../features/workbench/simulation-input';
 import { useLabStore } from '../store/lab-store';
 
 export default function WorkbenchPage() {
@@ -29,6 +30,42 @@ export default function WorkbenchPage() {
     [workspace],
   );
   const primaryResult = useMemo(() => simulateProjectile(primaryInput), [primaryInput]);
+  const scenarioSignature = useMemo(() => solverScenarioSignature(primaryInput), [primaryInput]);
+  const [inversePreview, setInversePreview] = useState<{
+    workspaceId: string;
+    signature: string;
+    candidate: SolverCandidate;
+    comparison: SolverCandidate | null;
+  } | null>(null);
+  const currentPreview = inversePreview?.workspaceId === workspace.id &&
+    inversePreview.signature === scenarioSignature ? inversePreview : null;
+  const inverseResult = useMemo(
+    () => currentPreview ? simulateProjectile({
+      ...primaryInput,
+      launchAngleDegrees: currentPreview.candidate.angleDegrees,
+      power: currentPreview.candidate.power,
+    }) : null,
+    [currentPreview, primaryInput],
+  );
+  const inverseComparisonResult = useMemo(
+    () => currentPreview?.comparison ? simulateProjectile({
+      ...primaryInput,
+      launchAngleDegrees: currentPreview.comparison.angleDegrees,
+      power: currentPreview.comparison.power,
+    }) : null,
+    [currentPreview, primaryInput],
+  );
+  const targetId = primaryInput.collisions.targets[0]?.id ?? '';
+  const targetRadius = primaryInput.collisions.targets[0]?.radius ?? 0;
+  function applyVerified(candidate: SolverCandidate) {
+    if (!currentPreview || !isConfirmedHit(candidate, targetId)) return;
+    const checked = simulateProjectile({
+      ...primaryInput, launchAngleDegrees: candidate.angleDegrees, power: candidate.power,
+    });
+    if (checked.terminationReason !== 'target-impact' ||
+      checked.impact?.kind !== 'target' || checked.impact.targetId !== targetId) return;
+    updateActiveSimulation({ angleDegrees: candidate.angleDegrees, power: candidate.power });
+  }
   const comparisonInput = useMemo(() => {
     if (!workspace.simulation.comparison.enabled) return null;
     return buildSimulationInput(workspace.launch, workspace.target, {
@@ -128,6 +165,8 @@ export default function WorkbenchPage() {
             <div className="canvas-legend" aria-label="Leyenda de trayectorias">
               <span className="primary-line">PRINCIPAL</span>
               {comparisonResult ? <span className="comparison-line">COMPARACION</span> : null}
+              {currentPreview ? <span className="inverse-line">INVERSA</span> : null}
+              {inverseComparisonResult ? <span className="inverse-high-line">ARCO ALTO</span> : null}
               <span className="coordinate-readout">
                 ΔX {delta.x.toFixed(1)} · ΔY {delta.y.toFixed(1)}
               </span>
@@ -143,6 +182,13 @@ export default function WorkbenchPage() {
             comparisonImpact={comparisonResult?.impact?.point ?? null}
             primaryApex={primaryResult.apexPoint.position}
             comparisonApex={comparisonResult?.apexPoint.position ?? null}
+            targetRadius={targetRadius}
+            inversePath={inverseResult?.trajectory.map((point) => point.position) ?? []}
+            inverseImpact={inverseResult?.impact?.point ?? currentPreview?.candidate.closestApproach?.point ?? null}
+            inverseApex={inverseResult?.apexPoint.position ?? null}
+            inverseComparisonPath={inverseComparisonResult?.trajectory.map((point) => point.position) ?? []}
+            inverseComparisonImpact={inverseComparisonResult?.impact?.point ?? currentPreview?.comparison?.closestApproach?.point ?? null}
+            inverseComparisonApex={inverseComparisonResult?.apexPoint.position ?? null}
             onPointChange={updateActivePoint}
           />
           <footer className="simulation-footer">
@@ -166,40 +212,25 @@ export default function WorkbenchPage() {
           </footer>
         </section>
       </section>
+      {currentPreview ? (
+        <p className="solver-preview-caption" role="status">
+          Trayectoria inversa seleccionada: {currentPreview.candidate.angleDegrees.toFixed(2)}° ·
+          potencia {currentPreview.candidate.power.toFixed(2)} u.
+          {inverseComparisonResult ? ' Comparación de arcos superpuesta.' : ''}
+        </p>
+      ) : null}
+      <InverseSolverPanel
+        key={workspace.id + ':' + scenarioSignature}
+        simulation={primaryInput}
+        previewVisible={currentPreview !== null}
+        onPreview={(candidate, comparison) => setInversePreview(
+          candidate ? { workspaceId: workspace.id, signature: scenarioSignature,
+            candidate, comparison: comparison ?? null } : null
+        )}
+        onApply={applyVerified}
+      />
     </div>
   );
-}
-
-function buildSimulationInput(
-  launchPosition: Vec2,
-  targetPosition: Vec2,
-  controls: SimulationControls,
-): SimulationInput {
-  const base = createDefaultSimulationInput(launchPosition, targetPosition);
-  return {
-    ...base,
-    launchAngleDegrees: controls.angleDegrees,
-    power: controls.power,
-    integrator: controls.integrator,
-    timeStepSeconds: controls.timeStepSeconds,
-    environment: {
-      gravity: controls.gravity,
-      additionalAcceleration: { x: 0, y: 0 },
-      wind:
-        controls.windModel === 'acceleration'
-          ? {
-              kind: 'acceleration',
-              magnitude: controls.windMagnitude,
-              directionDegrees: controls.windDirectionDegrees,
-            }
-          : {
-              kind: 'linear-drag',
-              magnitude: controls.windMagnitude,
-              directionDegrees: controls.windDirectionDegrees,
-              dragCoefficientPerSecond: controls.dragCoefficientPerSecond,
-            },
-    },
-  };
 }
 
 function Metric({
