@@ -350,7 +350,10 @@ export function solveProjectile(
   let verificationTimeWindowReserved = false;
   const searchAllowed = () => {
     if (coarseEvaluations + refinementEvaluations >= searchLimit) return false;
-    if (observedProvisionalHit && elapsed() >= budgets.maximumWallTimeMs - verificationTimeReserve) {
+    if (
+      observedProvisionalHit &&
+      elapsed() >= budgets.maximumWallTimeMs - verificationTimeReserve
+    ) {
       verificationTimeWindowReserved = true;
       stopReason = 'time-limit';
       return false;
