@@ -421,3 +421,16 @@
     flex: 1 1 100%;
   }
 }
+
+@media (max-width: 680px) {
+  .solver-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .solver-actions .button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+}
