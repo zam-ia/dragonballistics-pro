@@ -191,8 +191,11 @@ inventara un segundo arco.
 | Soluciones solicitadas  |                 4 |                  16 | salida legible y deduplicable         |
 | Semillas por cuenca     |                 2 |                   4 | diversidad sin explosion combinatoria |
 
-Se aplica el primer limite alcanzado. `budget-exhausted` devuelve candidatos parciales y explica el
-limite; no equivale a `no-solution`.
+Los limites de evaluaciones y tiempo son independientes y se aplica el primero alcanzado. El valor
+predeterminado de 1,024 es un techo, no una promesa de completar esa cantidad dentro de 2 s.
+`budget-exhausted` devuelve candidatos parciales y explica el limite; no equivale a `no-solution`.
+Ademas, agotar una busqueda discreta finita sin impactos no constituye por si solo una prueba
+matematica de que no exista una solucion continua.
 
 ## Rendimiento y Web Worker
 
@@ -205,23 +208,27 @@ Plan:
 - el solver puro vive en `packages/physics/src/solver/`;
 - un Worker de `apps/web` recibe estructuras serializables con `jobId`;
 - emite progreso como maximo cada 50 ms o cada 16 evaluaciones;
-- comprueba cancelacion entre evaluaciones y lotes de refinamiento;
+- procesa lotes pequenos y comprueba cancelacion entre ellos, sin bloquear hasta terminar la busqueda;
 - la UI nunca ejecuta el lote sincrono en el hilo principal;
 - la trayectoria completa se recalcula solo para las soluciones finales seleccionadas.
 
-Antes del solver se medira el evaluador `summary`. Criterios para avanzar:
+Fase 3A implemento y midio el evaluador `summary`:
 
-- paridad funcional completa con `full`;
-- cero puntos de trayectoria acumulados en modo resumen;
-- al menos 50 % menos tiempo por evaluacion predeterminada en el mismo benchmark;
-- aumento pico de heap claramente inferior al modo completo;
-- si no se alcanza la mejora, perfilar antes de implementar busqueda masiva.
+- paridad funcional con `full` en 16 escenarios fisicos y de error;
+- cero puntos de trayectoria acumulados;
+- reduccion del payload serializado de `98.41 %` a `99.92 %`;
+- mejora temporal de `1.059x` en default y `1.042x` con `dt=0.001`;
+- costo dominante perfilado en RK4 parcial, aplanamiento y refinamiento de colisiones.
 
-Los umbrales son puertas de diseño, no resultados ya obtenidos.
+El objetivo de 2x no se alcanzo. No se relajan tolerancias ni se bifurca el motor para forzarlo. A la
+tasa observada, 2 s permiten aproximadamente 153 evaluaciones default o 7 de alta resolucion antes de
+agregar overhead del solver. El diseno conserva los limites de 1,024/2 s y 4,096/5 s, deteniendose por
+el primero que se cumpla. Los resultados completos estan en
+`docs/reports/physics-summary-benchmark-2026-11-06.md`.
 
 ## Incrementos de implementacion
 
-1. Extraer nucleo compartido y crear `summary`, con pruebas de paridad y benchmark.
+1. Extraer nucleo compartido y crear `summary`, con pruebas de paridad y benchmark. Completado en 3A.
 2. Definir contratos/validacion del solver y puntuacion de aproximacion.
 3. Implementar muestreo grueso determinista con presupuestos.
 4. Agregar refinamiento, deduplicacion y diversidad de arcos.

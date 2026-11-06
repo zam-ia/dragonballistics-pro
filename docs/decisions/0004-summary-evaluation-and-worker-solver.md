@@ -1,6 +1,6 @@
 # ADR 0004: evaluacion resumen y solucionador en Worker
 
-Estado: propuesta
+Estado: aceptada para el evaluador summary; Worker pendiente
 Fecha: 2026-11-06
 
 ## Contexto
@@ -36,4 +36,7 @@ ranking no necesita.
 - La UI permanece responsiva aunque el job tarde segundos.
 - Los resultados parciales y presupuestos agotados se vuelven estados explicitos.
 
-La decision pasa a `aceptada` solo despues de validar la paridad y el benchmark del primer incremento.
+Fase 3A valido la paridad del primer incremento. El benchmark logro una reduccion de payload de
+`98.41 %` a `99.92 %`, pero solo `1.059x` y `1.042x` de mejora temporal. El perfil identifica como
+costo dominante las integraciones parciales de la deteccion curva, no la retencion de puntos. El
+Worker y la busqueda continuan pendientes y requieren una decision separada en Fase 3B.

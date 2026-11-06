@@ -152,6 +152,14 @@ Todos los escalares/vectores deben ser finitos. Un estado `NaN`/infinito se dete
 tiempo de vuelo, alcance horizontal, altura maxima, apice, iteraciones, advertencias, errores y una
 copia de los parametros utilizados con velocidad inicial derivada.
 
+Fase 3A agrega `evaluateProjectileSummary`. Reutiliza el mismo nucleo, pero no crea ni expone el arreglo
+de trayectoria. Devuelve estado final completo, impacto, tiempo, alcance, apice, iteraciones,
+diagnosticos y la mejor aproximacion al objetivo seleccionado. Los impactos conservan el refinamiento
+temporal de colisiones. Para trayectorias que no impactan, la aproximacion minima se calcula sobre cada
+segmento de la misma polilinea adaptativa; `spatialTolerance` declara la desviacion geometrica maxima
+permitida por ese aplanamiento. El tiempo de una aproximacion sin impacto se interpola dentro de la
+hoja y no tiene la tolerancia temporal mas estricta reservada para impactos.
+
 ## Validacion numerica reproducible
 
 | Caso                               | Resultado del motor                          | Referencia / criterio                                     |

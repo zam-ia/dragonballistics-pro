@@ -1,6 +1,6 @@
 # Plan de pruebas del solucionador inverso
 
-Estado: propuesta previa a implementacion
+Estado: evaluador summary implementado; solver pendiente
 Fecha: 2026-11-06
 
 ## Objetivos
@@ -24,6 +24,9 @@ Pruebas de paridad `full` contra `summary` para:
 
 Criterios: misma terminacion e impacto; tiempo, posicion, velocidad y apice dentro de las tolerancias de
 Fase 2. `summary` no debe acumular un arreglo de trayectoria.
+
+Fase 3A cubre este bloque con 16 escenarios de paridad y cuatro pruebas de contrato/aproximacion. Los
+bloques siguientes pertenecen a Fase 3B y posteriores.
 
 ## 2. Casos analiticos
 
