@@ -230,7 +230,7 @@ export function InverseSolverPanel({ simulation, previewVisible, onPreview, onAp
                   aria-label="Presupuesto de evaluaciones utilizado"
                   aria-valuemin={0}
                   aria-valuenow={progress.evaluatedCandidates}
-                  aria-valuemax={numberOf(form.evaluations)}
+                  aria-valuemax={Number(form.evaluations)}
                 >
                   <span
                     style={{
@@ -238,7 +238,7 @@ export function InverseSolverPanel({ simulation, previewVisible, onPreview, onAp
                         String(
                           Math.min(
                             100,
-                            (progress.evaluatedCandidates / numberOf(form.evaluations)) * 100,
+                            (progress.evaluatedCandidates / Number(form.evaluations)) * 100,
                           ),
                         ) + '%',
                     }}
