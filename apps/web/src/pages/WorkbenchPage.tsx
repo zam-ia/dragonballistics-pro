@@ -8,7 +8,8 @@ import type { SimulationControls, Vec2 } from '@dragonballistics/shared';
 import { Activity, Clock3, Gauge, Info, Mountain, Orbit, Wind } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { GeometryCanvas } from '../features/workbench/GeometryCanvas';
-import { InverseSolverPanel, isConfirmedHit } from '../features/workbench/InverseSolverPanel';
+import { InverseSolverPanel } from '../features/workbench/InverseSolverPanel';
+import { isConfirmedHit } from '../features/workbench/inverse-solver-model';
 import {
   buildSimulationInput,
   solverScenarioSignature,
