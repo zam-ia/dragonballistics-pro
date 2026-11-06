@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createDefaultSimulationInput } from '@dragonballistics/physics';
 import { createDefaultSimulationControls } from '@dragonballistics/shared';
 import { buildSimulationInput, solverScenarioSignature } from './simulation-input';
-import { initialSearchForm, isConfirmedHit, validateSolverForm } from './InverseSolverPanel';
+import { initialSearchForm, isConfirmedHit, validateSolverForm } from './inverse-solver-model';
 
 describe('inverse UI physics contract', () => {
   const controls = createDefaultSimulationControls();
