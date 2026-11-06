@@ -102,8 +102,7 @@ export function parseWorkerResponse(value: unknown): SolverWorkerResponse | null
       finite(r.verificationEvaluations) && finite(r.hitCount) &&
       r.solutions.every((c: unknown) =>
         record(c) && finite(c.angleDegrees) && finite(c.power) &&
-        typeof c.hit === 'boolean' && c.verifiedWithFullSimulation === true !== (c.hit === false)
-          ? false : true)) {
+        typeof c.hit === 'boolean' && (!c.hit || c.verifiedWithFullSimulation === true))) {
       return { type: 'RESULT', jobId: value.jobId, result: r as unknown as SolverResult };
     }
   }
