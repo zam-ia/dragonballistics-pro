@@ -4,8 +4,15 @@ All notable changes to DragonBallistics Pro are recorded here.
 
 ## Unreleased
 
+### Added
+
+- Phase 3C typed Web Worker protocol, reusable non-React search controller, real browser integration fixture, and forced cancellation with job isolation.
+- Browser and unit coverage for Worker start, progress, verified results, replacement, failure recovery and cancellation.
+
 ### Changed
 
+- Reserved a bounded physics-verification budget before refining and corrected progress hit counts to include only fully confirmed impacts.
+- Added synthetic refinement-only target coverage and real Worker performance instrumentation.
 - Reused a quartic Bernstein representation of each integrated step for collision and proximity
   queries while retaining exact integrated impact state.
 - Precomputed force-field constants and removed redundant RK4 derivative allocations.
