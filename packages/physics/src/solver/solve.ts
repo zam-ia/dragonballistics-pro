@@ -1,6 +1,6 @@
 import { evaluateProjectileSummary, simulateProjectile } from '../simulation';
 import { validateSimulationInput } from '../validation';
-import type { SimulationInput, SimulationMessage, SimulationSummary } from '../types';
+import type { SimulationMessage, SimulationSummary } from '../types';
 import {
   DEFAULT_SOLVER_BUDGETS,
   SOLVER_HARD_LIMITS,
@@ -296,7 +296,7 @@ export function solveProjectile(
   let coarseEvaluations = 0;
   let refinementEvaluations = 0;
   let verificationEvaluations = 0;
-  let coarseMilliseconds = 0;
+  let coarseMilliseconds: number;
   let refinementMilliseconds = 0;
   let phase: SolverPhase = 'coarse';
   let stopReason: SolverStopReason = 'completed';
