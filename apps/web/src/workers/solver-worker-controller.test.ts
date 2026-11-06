@@ -117,6 +117,27 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
     controller.dispose();
   });
 
+  it.each(['coarse', 'refinement'] as const)(
+    'can cancel in %s phase and recover without stale progress',
+    (phase) => {
+      const { controller, workers } = setup();
+      const a = controller.start(input);
+      const staleCallback = workers[0]?.onmessage;
+      workers[0]?.emit({ type: 'PROGRESS', jobId: a, progress: {
+        ...progress,
+        phase,
+        refinementEvaluations: phase === 'refinement' ? 4 : 0,
+      } });
+      expect(controller.getSnapshot().progress?.phase).toBe(phase);
+      expect(controller.cancel()).toBe(true);
+      const b = controller.start(input);
+      staleCallback?.({ data: { type: 'PROGRESS', jobId: a, progress } } as MessageEvent<unknown>);
+      expect(controller.getSnapshot().jobId).toBe(b);
+      expect(controller.getSnapshot().progress).toBeNull();
+      controller.dispose();
+    },
+  );
+
   it('recovers after Worker errors and runtime protocol errors', () => {
     const { controller, workers } = setup();
     const a = controller.start(input);
