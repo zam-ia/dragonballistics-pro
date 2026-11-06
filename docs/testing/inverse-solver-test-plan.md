@@ -1,6 +1,6 @@
 # Plan de pruebas del solucionador inverso
 
-Estado: evaluador summary implementado; solver pendiente
+Estado: Fases 3A-3B verificadas; validacion del Worker 3C en curso
 Fecha: 2026-11-06
 
 ## Objetivos
@@ -114,3 +114,25 @@ Fase 3A.1 alcanzo `1.143x` frente al summary publicado en la pasada standalone p
 `8.841x` en alta resolucion. El A/B dentro del mismo proceso registro 87.37 y 35.13 evaluaciones/s. La
 mediana mejora mas que el promedio, por lo que el presupuesto usa el promedio conservador. Workers,
 WebAssembly y GPU siguen pendientes hasta medir el solver real.
+
+## 8. Puerta 3C: ejecucion real en Web Worker
+
+- Vitest con Worker simulado: arranque, suscripcion, progreso monotono,
+  respuesta tipada, CANCEL por terminacion, reanudacion, descarte de
+  mensajes y errores antiguos, errores de protocolo y del Worker.
+- Vitest de fisica: reserva de evaluaciones para impactos confirmados;
+  escenario en el que la exploracion gruesa no impacta y el refinamiento si.
+- Playwright con Worker real construido por Vite (fixture sin UI):
+  busqueda completada, `PROGRESS`, resultados verificados, rechazo de
+  entrada malformada, cancelacion de alta resolucion y reemplazo sin
+  bloqueo del hilo principal.
+- Medir tiempo de creacion, primer progreso, envio de mensaje,
+  tiempo total, coste de cancelacion, reinicio y actividad del temporizador
+  del hilo principal. Un timestamp local de `terminate()` no implica
+  confirmacion sincronica de finalizacion del proceso interno.
+- La cancelacion durante refinamiento tambien se cubre con pruebas
+  deterministas de controlador simulado. No interpretar esto como
+  prueba de latencia real de una integracion individual.
+- `jobId` es obligatorio y cualquier resultado antiguo se descarta.
+- La calidad y las mediciones reales deben leerse del workflow de CI;
+  no fijar umbrales de tiempo fragiles para hardware desconocido.
