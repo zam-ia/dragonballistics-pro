@@ -28,11 +28,7 @@ export interface SolverInput {
 }
 
 export type SolverStatus =
-  | 'succeeded'
-  | 'no-solution'
-  | 'invalid-input'
-  | 'budget-exhausted'
-  | 'cancelled';
+  'succeeded' | 'no-solution' | 'invalid-input' | 'budget-exhausted' | 'cancelled';
 
 export type SolverArc = 'low' | 'high' | 'undetermined';
 export type SolverPhase = 'coarse' | 'refinement' | 'complete';

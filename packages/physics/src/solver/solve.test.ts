@@ -9,14 +9,24 @@ function scenario(overrides: Partial<SimulationInput> = {}): SimulationInput {
     launchPosition: { x: 0, y: 0 },
     launchAngleDegrees: 30,
     power: 40,
-    powerModel: { kind: 'linear', baseSpeed: 0, speedPerPowerUnit: 1, minimumPower: 0, maximumPower: 70 },
+    powerModel: {
+      kind: 'linear',
+      baseSpeed: 0,
+      speedPerPowerUnit: 1,
+      minimumPower: 0,
+      maximumPower: 70,
+    },
     environment: { gravity: 9.81, additionalAcceleration: { x: 0, y: 0 }, wind: { kind: 'none' } },
     integrator: 'rk4',
     timeStepSeconds: 0.05,
     maximumTimeSeconds: 14,
     maximumIterations: 400,
     bounds: { minimumX: -20, maximumX: 900, minimumY: -20, maximumY: 500 },
-    collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: { x: 140, y: 1 }, radius: 3 }] },
+    collisions: {
+      groundY: 0,
+      terrain: [],
+      targets: [{ id: 'goal', center: { x: 140, y: 1 }, radius: 3 }],
+    },
     ...overrides,
   };
 }
@@ -28,7 +38,12 @@ function request(simulation = scenario(), overrides: Partial<SolverInput> = {}):
     angleRange: { minimum: 10, maximum: 80 },
     powerRange: { minimum: 40, maximum: 40 },
     requestedSolutions: 4,
-    budgets: { maximumEvaluations: 320, maximumWallTimeMs: 5000, coarseFraction: 0.45, refinementRounds: 6 },
+    budgets: {
+      maximumEvaluations: 320,
+      maximumWallTimeMs: 5000,
+      coarseFraction: 0.45,
+      refinementRounds: 6,
+    },
     ...overrides,
   };
 }
@@ -43,31 +58,47 @@ describe('deterministic inverse projectile solver', () => {
     expect(verified(result).length).toBeGreaterThanOrEqual(2);
     expect(new Set(verified(result).map((c) => c.arc))).toEqual(new Set(['low', 'high']));
     for (const candidate of verified(result)) {
-      expect(Math.min(Math.abs(candidate.angleDegrees - 30), Math.abs(candidate.angleDegrees - 60))).toBeLessThan(5);
+      expect(
+        Math.min(Math.abs(candidate.angleDegrees - 30), Math.abs(candidate.angleDegrees - 60)),
+      ).toBeLessThan(5);
       expect(candidate.power).toBe(40);
     }
   });
 
   it('does not invent a high arc when the angular interval excludes it', () => {
-    const result = solveProjectile(request(scenario(), { angleRange: { minimum: 20, maximum: 40 } }));
+    const result = solveProjectile(
+      request(scenario(), { angleRange: { minimum: 20, maximum: 40 } }),
+    );
     expect(verified(result).length).toBeGreaterThan(0);
     expect(verified(result).every((candidate) => candidate.arc === 'undetermined')).toBe(true);
   });
 
   it('supports different available powers', () => {
-    const result = solveProjectile(request(scenario(), { powerRange: { minimum: 35, maximum: 55 } }));
+    const result = solveProjectile(
+      request(scenario(), { powerRange: { minimum: 35, maximum: 55 } }),
+    );
     expect(verified(result).length).toBeGreaterThan(0);
-    expect(result.solutions.every((candidate) => candidate.power >= 35 && candidate.power <= 55)).toBe(true);
+    expect(
+      result.solutions.every((candidate) => candidate.power >= 35 && candidate.power <= 55),
+    ).toBe(true);
   });
 
   it('reports no observed solution without claiming impossibility', () => {
     const simulation = scenario({
       power: 10,
-      powerModel: { kind: 'linear', baseSpeed: 0, speedPerPowerUnit: 1, minimumPower: 0, maximumPower: 15 },
+      powerModel: {
+        kind: 'linear',
+        baseSpeed: 0,
+        speedPerPowerUnit: 1,
+        minimumPower: 0,
+        maximumPower: 15,
+      },
     });
-    const result = solveProjectile(request(simulation, {
-      powerRange: { minimum: 10, maximum: 15 },
-    }));
+    const result = solveProjectile(
+      request(simulation, {
+        powerRange: { minimum: 10, maximum: 15 },
+      }),
+    );
     expect(result.status).toBe('no-solution');
     expect(result.messages.some((m) => m.code === 'no-observed-hit')).toBe(true);
   });
@@ -77,7 +108,9 @@ describe('deterministic inverse projectile solver', () => {
     { kind: 'acceleration' as const, magnitude: 1, directionDegrees: 90 },
     { kind: 'acceleration' as const, magnitude: 1, directionDegrees: 180 },
   ])('handles horizontal and vertical wind %j', (wind) => {
-    const simulation = scenario({ environment: { gravity: 9.81, additionalAcceleration: { x: 0, y: 0 }, wind } });
+    const simulation = scenario({
+      environment: { gravity: 9.81, additionalAcceleration: { x: 0, y: 0 }, wind },
+    });
     const result = solveProjectile(request(simulation));
     expect(verified(result).length).toBeGreaterThan(0);
   });
@@ -85,13 +118,31 @@ describe('deterministic inverse projectile solver', () => {
   it('handles linear aerodynamic drag', () => {
     const simulation = scenario({
       environment: {
-        gravity: 9.81, additionalAcceleration: { x: 0, y: 0 },
-        wind: { kind: 'linear-drag', magnitude: 0, directionDegrees: 0, dragCoefficientPerSecond: 0.12 },
+        gravity: 9.81,
+        additionalAcceleration: { x: 0, y: 0 },
+        wind: {
+          kind: 'linear-drag',
+          magnitude: 0,
+          directionDegrees: 0,
+          dragCoefficientPerSecond: 0.12,
+        },
       },
     });
-    const forward = simulateProjectile({ ...simulation, launchAngleDegrees: 35, power: 40, collisions: { groundY: 0, terrain: [], targets: [] } });
+    const forward = simulateProjectile({
+      ...simulation,
+      launchAngleDegrees: 35,
+      power: 40,
+      collisions: { groundY: 0, terrain: [], targets: [] },
+    });
     const destination = { x: forward.horizontalRange, y: 1 };
-    const testSimulation = { ...simulation, collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: destination, radius: 4 }] } };
+    const testSimulation = {
+      ...simulation,
+      collisions: {
+        groundY: 0,
+        terrain: [],
+        targets: [{ id: 'goal', center: destination, radius: 4 }],
+      },
+    };
     expect(verified(solveProjectile(request(testSimulation))).length).toBeGreaterThan(0);
   });
 
@@ -109,7 +160,13 @@ describe('deterministic inverse projectile solver', () => {
   });
 
   it('can hit a small circular target with local refinement', () => {
-    const small = scenario({ collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: { x: 140, y: 1 }, radius: 0.65 }] } });
+    const small = scenario({
+      collisions: {
+        groundY: 0,
+        terrain: [],
+        targets: [{ id: 'goal', center: { x: 140, y: 1 }, radius: 0.65 }],
+      },
+    });
     const result = solveProjectile(request(small));
     expect(verified(result).length).toBeGreaterThan(0);
   });
@@ -135,9 +192,16 @@ describe('deterministic inverse projectile solver', () => {
   });
 
   it('stops at the evaluation limit and returns useful partial candidates', () => {
-    const result = solveProjectile(request(scenario(), {
-      budgets: { maximumEvaluations: 5, maximumWallTimeMs: 5000, coarseFraction: 0.8, refinementRounds: 6 },
-    }));
+    const result = solveProjectile(
+      request(scenario(), {
+        budgets: {
+          maximumEvaluations: 5,
+          maximumWallTimeMs: 5000,
+          coarseFraction: 0.8,
+          refinementRounds: 6,
+        },
+      }),
+    );
     expect(result.status).toBe('budget-exhausted');
     expect(result.exhaustedBudget).toBe('evaluations');
     expect(result.evaluatedCandidates).toBe(5);
@@ -146,9 +210,22 @@ describe('deterministic inverse projectile solver', () => {
 
   it('stops at the time limit using an injected monotonically advancing clock', () => {
     let clock = 0;
-    const result = solveProjectile(request(scenario(), { budgets: { maximumEvaluations: 320, maximumWallTimeMs: 80, coarseFraction: 0.45, refinementRounds: 6 } }), {
-      now: () => { clock += 10; return clock; },
-    });
+    const result = solveProjectile(
+      request(scenario(), {
+        budgets: {
+          maximumEvaluations: 320,
+          maximumWallTimeMs: 80,
+          coarseFraction: 0.45,
+          refinementRounds: 6,
+        },
+      }),
+      {
+        now: () => {
+          clock += 10;
+          return clock;
+        },
+      },
+    );
     expect(result.status).toBe('budget-exhausted');
     expect(result.exhaustedBudget).toBe('time');
     expect(result.evaluatedCandidates).toBeLessThan(320);
@@ -164,7 +241,10 @@ describe('deterministic inverse projectile solver', () => {
   });
 
   it('is repeatable and does not evaluate duplicate parameter combinations', () => {
-    const input = request(scenario(), { angleRange: { minimum: 30, maximum: 30 }, powerRange: { minimum: 40, maximum: 40 } });
+    const input = request(scenario(), {
+      angleRange: { minimum: 30, maximum: 30 },
+      powerRange: { minimum: 40, maximum: 40 },
+    });
     const first = solveProjectile(input, { now: () => 0 });
     const second = solveProjectile(input, { now: () => 0 });
     expect(first).toEqual(second);
@@ -174,9 +254,17 @@ describe('deterministic inverse projectile solver', () => {
 
   it('reports monotonic progress without a React dependency', () => {
     const updates: number[] = [];
-    solveProjectile(request(scenario(), {
-      budgets: { maximumEvaluations: 32, maximumWallTimeMs: 5000, coarseFraction: 0.5, refinementRounds: 2 },
-    }), { onProgress: (p) => updates.push(p.evaluatedCandidates) });
+    solveProjectile(
+      request(scenario(), {
+        budgets: {
+          maximumEvaluations: 32,
+          maximumWallTimeMs: 5000,
+          coarseFraction: 0.5,
+          refinementRounds: 2,
+        },
+      }),
+      { onProgress: (p) => updates.push(p.evaluatedCandidates) },
+    );
     expect(updates.length).toBeGreaterThan(0);
     expect(updates).toEqual([...updates].sort((a, b) => a - b));
   });
@@ -186,7 +274,11 @@ describe('deterministic inverse projectile solver', () => {
     const result = solveProjectile(input);
     for (const candidate of verified(result)) {
       expect(candidate.verifiedWithFullSimulation).toBe(true);
-      const full = simulateProjectile({ ...input.simulation, launchAngleDegrees: candidate.angleDegrees, power: candidate.power });
+      const full = simulateProjectile({
+        ...input.simulation,
+        launchAngleDegrees: candidate.angleDegrees,
+        power: candidate.power,
+      });
       expect(full.terminationReason).toBe('target-impact');
       expect(full.impact?.targetId).toBe('goal');
       expect(full.flightTimeSeconds).toBeCloseTo(candidate.flightTimeSeconds, 8);

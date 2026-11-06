@@ -56,7 +56,10 @@ function validateSolverInput(input: SolverInput): ValidatedInput {
   ) {
     reject('invalid-power-range', 'El rango de potencia supera el modelo fisico.');
   }
-  if (!input.targetId || !input.simulation.collisions.targets.some((t) => t.id === input.targetId)) {
+  if (
+    !input.targetId ||
+    !input.simulation.collisions.targets.some((t) => t.id === input.targetId)
+  ) {
     reject('target-not-found', 'No existe el objetivo seleccionado.');
   }
   if (
@@ -170,12 +173,19 @@ function* coarsePoints(angle: SolverRange, power: SolverRange): Generator<[numbe
   }
 }
 
-function entryFromSummary(angle: number, power: number, summary: SimulationSummary, targetId: string): SearchEntry {
+function entryFromSummary(
+  angle: number,
+  power: number,
+  summary: SimulationSummary,
+  targetId: string,
+): SearchEntry {
   const provisionalHit =
     summary.terminationReason === 'target-impact' &&
     summary.impact?.kind === 'target' &&
     summary.impact.targetId === targetId;
-  const missDistance = provisionalHit ? 0 : (summary.closestApproach?.surfaceDistance ?? Number.MAX_VALUE);
+  const missDistance = provisionalHit
+    ? 0
+    : (summary.closestApproach?.surfaceDistance ?? Number.MAX_VALUE);
   return {
     provisionalHit,
     candidate: {
@@ -200,7 +210,13 @@ function diverseSeeds(entries: SearchEntry[], angle: SolverRange, maximum: numbe
   const bands = span === 0 ? 1 : Math.min(8, Math.max(2, Math.floor(Math.sqrt(entries.length))));
   const best = new Map<number, SearchEntry>();
   for (const entry of entries) {
-    const band = span === 0 ? 0 : Math.min(bands - 1, Math.floor(((entry.candidate.angleDegrees - angle.minimum) / span) * bands));
+    const band =
+      span === 0
+        ? 0
+        : Math.min(
+            bands - 1,
+            Math.floor(((entry.candidate.angleDegrees - angle.minimum) / span) * bands),
+          );
     const previous = best.get(band);
     if (!previous || compareEntries(entry, previous) < 0) best.set(band, entry);
   }
@@ -208,15 +224,23 @@ function diverseSeeds(entries: SearchEntry[], angle: SolverRange, maximum: numbe
 }
 
 /** Distinct parameter solutions require separation, and distinct arcs require apex separation too. */
-function deduplicate(entries: SearchEntry[], angle: SolverRange, power: SolverRange): SearchEntry[] {
+function deduplicate(
+  entries: SearchEntry[],
+  angle: SolverRange,
+  power: SolverRange,
+): SearchEntry[] {
   const angleEps = Math.max(0.12, (angle.maximum - angle.minimum) / 512);
   const powerEps = Math.max(0.02, (power.maximum - power.minimum) / 512);
   const kept: SearchEntry[] = [];
   for (const entry of [...entries].sort(compareEntries)) {
-    if (kept.some((other) =>
-      Math.abs(other.candidate.angleDegrees - entry.candidate.angleDegrees) <= angleEps &&
-      Math.abs(other.candidate.power - entry.candidate.power) <= powerEps
-    )) continue;
+    if (
+      kept.some(
+        (other) =>
+          Math.abs(other.candidate.angleDegrees - entry.candidate.angleDegrees) <= angleEps &&
+          Math.abs(other.candidate.power - entry.candidate.power) <= powerEps,
+      )
+    )
+      continue;
     kept.push(entry);
   }
   return kept;
@@ -231,14 +255,18 @@ function classifyArcs(entries: SearchEntry[], input: SolverInput): void {
   const basins: SearchEntry[][] = [];
   for (const hit of sorted) {
     const last = basins[basins.length - 1];
-    if (!last || hit.candidate.angleDegrees - last[last.length - 1].candidate.angleDegrees > angleGap) {
+    if (
+      !last ||
+      hit.candidate.angleDegrees - last[last.length - 1].candidate.angleDegrees > angleGap
+    ) {
       basins.push([hit]);
     } else {
       last.push(hit);
     }
   }
   if (basins.length < 2) return;
-  const apexFor = (basin: SearchEntry[]) => basin.reduce((sum, e) => sum + e.candidate.maximumHeight, 0) / basin.length;
+  const apexFor = (basin: SearchEntry[]) =>
+    basin.reduce((sum, e) => sum + e.candidate.maximumHeight, 0) / basin.length;
   const byHeight = [...basins].sort((a, b) => apexFor(a) - apexFor(b));
   const minimumSeparation = Math.max(target.radius * 2, 0.5);
   if (apexFor(byHeight[byHeight.length - 1]) - apexFor(byHeight[0]) <= minimumSeparation) return;
@@ -251,7 +279,10 @@ function classifyArcs(entries: SearchEntry[], input: SolverInput): void {
  * clock/cancellation sequence. A deadline is checked between evaluations, not inside
  * a single physics call; wall time can overrun by the last evaluation's duration.
  */
-export function solveProjectile(input: SolverInput, options: SolverExecutionOptions = {}): SolverResult {
+export function solveProjectile(
+  input: SolverInput,
+  options: SolverExecutionOptions = {},
+): SolverResult {
   const now = options.now ?? (() => performance.now());
   const started = now();
   let lastTime = started;
@@ -308,7 +339,10 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
     const existing = cache.get(key);
     if (existing) return existing;
     if (!allowed()) return null;
-    const summary = evaluateProjectileSummary({ ...input.simulation, launchAngleDegrees: angle, power }, { targetId: input.targetId });
+    const summary = evaluateProjectileSummary(
+      { ...input.simulation, launchAngleDegrees: angle, power },
+      { targetId: input.targetId },
+    );
     const entry = entryFromSummary(angle, power, summary, input.targetId);
     cache.set(key, entry);
     entries.push(entry);
@@ -320,19 +354,32 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
 
   if (errors.length) {
     return {
-      status: 'invalid-input', solutions: [], evaluatedCandidates: 0,
-      coarseEvaluations: 0, refinementEvaluations: 0, verificationEvaluations: 0,
-      hitCount: 0, elapsedMilliseconds: elapsed(), coarseMilliseconds: 0,
-      refinementMilliseconds: 0, exhaustedBudget: null, stopReason: 'completed', messages: errors,
+      status: 'invalid-input',
+      solutions: [],
+      evaluatedCandidates: 0,
+      coarseEvaluations: 0,
+      refinementEvaluations: 0,
+      verificationEvaluations: 0,
+      hitCount: 0,
+      elapsedMilliseconds: elapsed(),
+      coarseMilliseconds: 0,
+      refinementMilliseconds: 0,
+      exhaustedBudget: null,
+      stopReason: 'completed',
+      messages: errors,
     };
   }
 
   const coarseStart = elapsed();
-  const planningCap = input.simulation.timeStepSeconds <= 0.002
-    ? HIGH_RESOLUTION_COARSE_EVALUATIONS
-    : DEFAULT_COARSE_EVALUATIONS;
+  const planningCap =
+    input.simulation.timeStepSeconds <= 0.002
+      ? HIGH_RESOLUTION_COARSE_EVALUATIONS
+      : DEFAULT_COARSE_EVALUATIONS;
   // Reserve time and evaluations for refining and physically verifying impacts.
-  const coarseLimit = Math.max(1, Math.min(planningCap, Math.floor(budgets.maximumEvaluations * budgets.coarseFraction)));
+  const coarseLimit = Math.max(
+    1,
+    Math.min(planningCap, Math.floor(budgets.maximumEvaluations * budgets.coarseFraction)),
+  );
   for (const [angle, power] of coarsePoints(input.angleRange, input.powerRange)) {
     if (coarseEvaluations >= coarseLimit || !allowed()) break;
     evaluate(angle, power);
@@ -359,19 +406,29 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
             if (da === 0 && dp === 0) continue;
             if (angleStep === 0 && da !== 0) continue;
             if (powerStep === 0 && dp !== 0) continue;
-            const a = Math.max(input.angleRange.minimum, Math.min(input.angleRange.maximum, best.candidate.angleDegrees + da * angleStep));
-            const p = Math.max(input.powerRange.minimum, Math.min(input.powerRange.maximum, best.candidate.power + dp * powerStep));
+            const a = Math.max(
+              input.angleRange.minimum,
+              Math.min(input.angleRange.maximum, best.candidate.angleDegrees + da * angleStep),
+            );
+            const p = Math.max(
+              input.powerRange.minimum,
+              Math.min(input.powerRange.maximum, best.candidate.power + dp * powerStep),
+            );
             neighbors.push([a, p]);
           }
         }
         for (const [a, p] of neighbors) {
           const candidate = evaluate(a, p);
           if (!candidate) break;
-          if (compareEntries(candidate, best) < 0 && (
-            candidate.provisionalHit !== best.provisionalHit ||
-            candidate.candidate.missDistance + IMPROVEMENT_EPSILON < best.candidate.missDistance ||
-            (candidate.provisionalHit && best.provisionalHit && compareEntries(candidate, best) < 0)
-          )) {
+          if (
+            compareEntries(candidate, best) < 0 &&
+            (candidate.provisionalHit !== best.provisionalHit ||
+              candidate.candidate.missDistance + IMPROVEMENT_EPSILON <
+                best.candidate.missDistance ||
+              (candidate.provisionalHit &&
+                best.provisionalHit &&
+                compareEntries(candidate, best) < 0))
+          ) {
             best = candidate;
             improved = true;
           }
@@ -390,8 +447,13 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
   // A summary hit does not become a reported hit without independent full simulation.
   // Verification also consumes an evaluation slot and the same wall-time budget.
   const provisional = deduplicate(entries, input.angleRange, input.powerRange);
-  const hitsToVerify = provisional.filter((e) => e.provisionalHit).sort((a, b) => a.candidate.angleDegrees - b.candidate.angleDegrees);
-  const verificationOrder = hitsToVerify.length < 2 ? hitsToVerify : [hitsToVerify[0], hitsToVerify[hitsToVerify.length - 1], ...hitsToVerify.slice(1, -1)];
+  const hitsToVerify = provisional
+    .filter((e) => e.provisionalHit)
+    .sort((a, b) => a.candidate.angleDegrees - b.candidate.angleDegrees);
+  const verificationOrder =
+    hitsToVerify.length < 2
+      ? hitsToVerify
+      : [hitsToVerify[0], hitsToVerify[hitsToVerify.length - 1], ...hitsToVerify.slice(1, -1)];
   for (const entry of verificationOrder) {
     if (!allowed()) break;
     const full = simulateProjectile({
@@ -400,8 +462,10 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
       power: entry.candidate.power,
     });
     verificationEvaluations += 1;
-    const confirmed = full.terminationReason === 'target-impact' &&
-      full.impact?.kind === 'target' && full.impact.targetId === input.targetId;
+    const confirmed =
+      full.terminationReason === 'target-impact' &&
+      full.impact?.kind === 'target' &&
+      full.impact.targetId === input.targetId;
     entry.candidate.verifiedWithFullSimulation = true;
     entry.candidate.hit = confirmed;
     entry.provisionalHit = confirmed;
@@ -428,27 +492,48 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
   }
   phase = 'complete';
   notify(true);
-  const exhaustedBudget = stopReason === 'time-limit' ? 'time' : stopReason === 'evaluation-limit' ? 'evaluations' : null;
+  const exhaustedBudget =
+    stopReason === 'time-limit' ? 'time' : stopReason === 'evaluation-limit' ? 'evaluations' : null;
   const hitCount = provisional.filter((e) => e.candidate.hit).length;
-  const status = stopReason === 'cancelled' ? 'cancelled'
-    : exhaustedBudget ? 'budget-exhausted'
-    : hitCount > 0 ? 'succeeded' : 'no-solution';
+  const status =
+    stopReason === 'cancelled'
+      ? 'cancelled'
+      : exhaustedBudget
+        ? 'budget-exhausted'
+        : hitCount > 0
+          ? 'succeeded'
+          : 'no-solution';
   const messages: SimulationMessage[] = [];
   if (stopReason !== 'completed') {
     messages.push({
       code: stopReason,
-      message: stopReason === 'cancelled' ? 'Busqueda cancelada.'
-        : stopReason === 'time-limit' ? 'Limite temporal alcanzado.'
-        : 'Limite de evaluaciones alcanzado.',
+      message:
+        stopReason === 'cancelled'
+          ? 'Busqueda cancelada.'
+          : stopReason === 'time-limit'
+            ? 'Limite temporal alcanzado.'
+            : 'Limite de evaluaciones alcanzado.',
     });
   }
   if (status === 'no-solution') {
-    messages.push({ code: 'no-observed-hit', message: 'No se encontro impacto en la busqueda finita; no demuestra imposibilidad.' });
+    messages.push({
+      code: 'no-observed-hit',
+      message: 'No se encontro impacto en la busqueda finita; no demuestra imposibilidad.',
+    });
   }
   return {
-    status, solutions: selected.map((e) => e.candidate),
-    evaluatedCandidates: evaluated(), coarseEvaluations, refinementEvaluations,
-    verificationEvaluations, hitCount, elapsedMilliseconds: elapsed(),
-    coarseMilliseconds, refinementMilliseconds, exhaustedBudget, stopReason, messages,
+    status,
+    solutions: selected.map((e) => e.candidate),
+    evaluatedCandidates: evaluated(),
+    coarseEvaluations,
+    refinementEvaluations,
+    verificationEvaluations,
+    hitCount,
+    elapsedMilliseconds: elapsed(),
+    coarseMilliseconds,
+    refinementMilliseconds,
+    exhaustedBudget,
+    stopReason,
+    messages,
   };
 }

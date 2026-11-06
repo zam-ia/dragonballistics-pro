@@ -12,10 +12,30 @@ interface Scenario {
 const scenarios: Scenario[] = [
   { name: 'calm-large', wind: { kind: 'none' }, targetRadius: 5, targetX: 140 },
   { name: 'calm-small', wind: { kind: 'none' }, targetRadius: 0.8, targetX: 140 },
-  { name: 'horizontal-wind-large', wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 0 }, targetRadius: 5, targetX: 140 },
-  { name: 'horizontal-wind-small', wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 0 }, targetRadius: 0.8, targetX: 140 },
-  { name: 'vertical-wind-large', wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 90 }, targetRadius: 5, targetX: 140 },
-  { name: 'vertical-wind-small', wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 90 }, targetRadius: 0.8, targetX: 140 },
+  {
+    name: 'horizontal-wind-large',
+    wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 0 },
+    targetRadius: 5,
+    targetX: 140,
+  },
+  {
+    name: 'horizontal-wind-small',
+    wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 0 },
+    targetRadius: 0.8,
+    targetX: 140,
+  },
+  {
+    name: 'vertical-wind-large',
+    wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 90 },
+    targetRadius: 5,
+    targetX: 140,
+  },
+  {
+    name: 'vertical-wind-small',
+    wind: { kind: 'acceleration', magnitude: 1, directionDegrees: 90 },
+    targetRadius: 0.8,
+    targetX: 140,
+  },
 ];
 
 function inputFor(s: Scenario): SolverInput {
@@ -24,20 +44,35 @@ function inputFor(s: Scenario): SolverInput {
       launchPosition: { x: 0, y: 0 },
       launchAngleDegrees: 30,
       power: 40,
-      powerModel: { kind: 'linear', baseSpeed: 0, speedPerPowerUnit: 1, minimumPower: 0, maximumPower: 70 },
+      powerModel: {
+        kind: 'linear',
+        baseSpeed: 0,
+        speedPerPowerUnit: 1,
+        minimumPower: 0,
+        maximumPower: 70,
+      },
       environment: { gravity: 9.81, additionalAcceleration: { x: 0, y: 0 }, wind: s.wind },
       integrator: 'rk4',
       timeStepSeconds: 0.05,
       maximumTimeSeconds: 14,
       maximumIterations: 400,
       bounds: { minimumX: -20, maximumX: 900, minimumY: -20, maximumY: 500 },
-      collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: { x: s.targetX, y: 1 }, radius: s.targetRadius }] },
+      collisions: {
+        groundY: 0,
+        terrain: [],
+        targets: [{ id: 'goal', center: { x: s.targetX, y: 1 }, radius: s.targetRadius }],
+      },
     },
     targetId: 'goal',
     angleRange: { minimum: 10, maximum: 80 },
     powerRange: { minimum: 40, maximum: 40 },
     requestedSolutions: 4,
-    budgets: { maximumEvaluations: 320, maximumWallTimeMs: 2000, coarseFraction: 0.45, refinementRounds: 6 },
+    budgets: {
+      maximumEvaluations: 320,
+      maximumWallTimeMs: 2000,
+      coarseFraction: 0.45,
+      refinementRounds: 6,
+    },
   };
 }
 
@@ -72,7 +107,9 @@ describe('inverse solver benchmark — reproducible synthetic scenarios', () => 
       };
     });
     const successRate = measurements.filter((m) => m.success).length / measurements.length;
-    console.log('INVERSE_SOLVER_BENCHMARK ' + JSON.stringify({ scenarios: measurements, successRate }));
+    console.log(
+      'INVERSE_SOLVER_BENCHMARK ' + JSON.stringify({ scenarios: measurements, successRate }),
+    );
     for (const measurement of measurements) {
       expect(measurement.evaluations).toBeLessThanOrEqual(320);
       expect(measurement.elapsedMilliseconds).toBeGreaterThanOrEqual(0);
