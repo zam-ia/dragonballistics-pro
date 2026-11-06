@@ -29,15 +29,16 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 | Dependencia de codigo sin licencia          | motor propio; referencias sin copia                       |
 | Deriva hacia asistencia en vivo             | limite arquitectonico y AGENTS.md                         |
 
-## Siguiente incremento autorizado
+## Fases del solucionador autorizadas y verificadas
 
-Fases 3A y 3A.1: evaluador `summary` y optimizacion validados.
-Fase 3B: solucionador inverso puro, con ranking, refinamiento y verificacion completa.
-Fase 3C: Worker dedicado y controlador de ciclo de vida, cancelacion real
-mediante `terminate()`, guardas de mensajes y aislamiento de trabajos.
-Esta rama permanece en desarrollo y el PR #2 sigue draft sin merge.
-La interfaz visual Fase 3D no esta autorizada ni implementada.
-
+Fase 3A y 3A.1: evaluador summary y optimizaciones aprobadas.
+Fase 3B: solucionador inverso determinista puro verificado.
+Fase 3C: ejecución mediante Worker, cancelación y aislamiento por jobId.
+Fase 3D: interfaz integrada del laboratorio, selección de soluciones,
+Canvas con arcos y aplicación voluntaria. La calidad automatizada
+alcanzó 129 pruebas Vitest y 11 Playwright en GitHub Actions.
+El PR #2 permanece abierto en draft y sin merge.
+No existe autorización para avanzar automáticamente a otra fase.
 Documentos de diseño:
 
 - `docs/specifications/inverse-solver-design.md`;
@@ -47,6 +48,8 @@ Documentos de diseño:
 - `docs/reports/physics-optimization-2026-11-06.md`.
 - `docs/reports/inverse-solver-phase-3b.md`.
 - `docs/decisions/0005-worker-isolation-and-hard-cancellation.md`.
+- `docs/decisions/0006-inverse-ui-and-workspace-isolation.md`.
+- `docs/reports/inverse-solver-phase-3d.md`.
 
 ## Verificacion de Fase 1
 
