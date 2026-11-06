@@ -324,9 +324,19 @@ describe('deterministic inverse projectile solver', () => {
     });
     const result = solveProjectile(
       request(simulation, {
-        budgets: { maximumEvaluations: 320, maximumWallTimeMs: 100, coarseFraction: 1, refinementRounds: 6 },
+        budgets: {
+          maximumEvaluations: 320,
+          maximumWallTimeMs: 100,
+          coarseFraction: 1,
+          refinementRounds: 6,
+        },
       }),
-      { now: () => { clock += 1; return clock; } },
+      {
+        now: () => {
+          clock += 1;
+          return clock;
+        },
+      },
     );
     expect(result.stopReason).toBe('time-limit');
     expect(result.messages.some((m) => m.message.includes('reservar tiempo'))).toBe(true);
