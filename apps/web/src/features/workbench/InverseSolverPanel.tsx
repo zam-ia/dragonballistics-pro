@@ -9,6 +9,7 @@ import {
 import { Ban, CheckCircle2, CircleDashed, Crosshair, EyeOff, Layers3, Play, RotateCcw, Target } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createSolverWorkerController } from '../../workers/solver-worker-controller';
+import './inverse-solver.css';
 
 type FormKey = 'targetId' | 'angleMin' | 'angleMax' | 'powerMin' | 'powerMax' | 'solutions' | 'evaluations' | 'timeMs';
 type SearchForm = Record<FormKey, string>;
