@@ -289,7 +289,7 @@ function drawTargetRadius(context: CanvasRenderingContext2D, point: Vec2, radius
   context.lineWidth = 1;
   context.setLineDash([3, 3]);
   context.beginPath();
-  context.arc(point.x, point.y, Math.max(7, radius), 0, Math.PI * 2);
+  context.arc(point.x, point.y, Math.max(0, radius), 0, Math.PI * 2);
   context.stroke();
   context.restore();
 }
