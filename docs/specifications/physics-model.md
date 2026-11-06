@@ -92,16 +92,33 @@ documentado. No se mezclan silenciosamente velocidad de aire y aceleracion direc
 
 ## Colisiones continuas
 
-Cada paso analiza el segmento entre la posicion anterior y la siguiente:
+Cada paso evalua la trayectoria producida por el mismo integrador, no solamente la cuerda entre sus
+extremos. El detector construye una polilinea adaptativa en orden temporal y compara las posiciones en
+un cuarto, la mitad y tres cuartos de cada intervalo con su cuerda. Subdivide cuando la desviacion
+supera la tolerancia o cuando el intervalo ocupa mas de `1/16` del paso.
+
+Sobre cada intervalo aceptado se prueban:
 
 - suelo horizontal mediante interseccion con `groundY`;
 - terreno mediante interseccion segmento-segmento;
 - objetivos mediante interseccion segmento-circulo;
 - limites del mundo mediante el primer cruce de frontera.
 
-Se selecciona la fraccion de paso mas temprana. El tiempo, posicion e impacto se interpolan dentro del
-paso para evitar que un proyectil atraviese superficies u objetivos por discretizacion. Los objetivos
-tienen prioridad si dos contactos coinciden numericamente.
+Los candidatos se refinan volviendo a evaluar la trayectoria integrada: biseccion para entradas con
+cambio de signo y minimizacion acotada para contactos tangenciales. La posicion, velocidad y tiempo de
+impacto provienen de la misma fraccion refinada. Los objetivos tienen prioridad si dos contactos
+coinciden numericamente.
+
+Contrato numerico:
+
+- tolerancia espacial maxima de aplanamiento: `1e-5 u`;
+- para objetivos pequeños: minimo entre `1e-5 u` y `radio × 1e-4`;
+- piso espacial por ruido de punto flotante: `1e-7 u`;
+- tolerancia temporal interna: `1e-10` de la fraccion del paso;
+- profundidad maxima: 16 subdivisiones.
+
+Una separacion menor que la tolerancia espacial se considera contacto numerico. El limite de
+profundidad evita trabajo no acotado con entradas extremas.
 
 ## Altura maxima
 
@@ -141,9 +158,13 @@ copia de los parametros utilizados con velocidad inicial derivada.
 | Apice 30° vs 60°                   | `20.387360` vs `61.162080` u                 | el arco alto supera al bajo                               |
 | Viento horizontal -1 / 0 / +1 u/s² | `112.143113` / `124.872184` / `137.601254` u | orden monotono correcto                                   |
 | Euler `dt=0.2` vs `dt=0.05`        | errores Y `1.962` y `0.4905` u               | relacion `0.25`                                           |
+| Curva `dt=1`, objetivo `(5,12.5)`  | impacto `t=0.4800039972485186`               | error radial `-4.59e-10 u`                                |
+| Tangencia en el apice              | contacto `t=0.49999999827523156`             | referencia analitica `t=0.5`                              |
+| Salida curva con extremos dentro   | salida `t=0.2763932023080997`                | referencia analitica `0.276393202250021`                  |
 
-Las pruebas tambien cubren viento vertical, alturas iniciales, suelo, terreno, circulos, potencia cero,
-gravedad cero, parametros invalidos, limite de iteraciones y conversion mundo/pantalla.
+Las pruebas tambien cubren viento vertical, arrastre lineal contra solucion cerrada, alturas iniciales,
+suelo, terreno, objetivos de radio `0.01`, falsos positivos de cuerda, contactos al inicio, diferentes
+`dt`, gravedad cero, parametros invalidos, limite de iteraciones y conversion mundo/pantalla.
 
 ## Limitaciones pendientes
 
@@ -151,5 +172,7 @@ gravedad cero, parametros invalidos, limite de iteraciones y conversion mundo/pa
   editor visual de terreno.
 - No hay resistencia cuadratica, densidad atmosferica, rotacion, proyectiles multiples ni eventos por
   tipo de disparo.
+- La deteccion adaptativa aproxima la curva por intervalos hasta las tolerancias declaradas; geometria
+  o escalas menores que `1e-7 u` no se distinguen como entidades separadas.
 - El punto de apice con fuerzas no lineales usa una fraccion basada en velocidades de los extremos.
 - El solucionador inverso de angulo/potencia pertenece a Fase 3 y no se implementa aqui.

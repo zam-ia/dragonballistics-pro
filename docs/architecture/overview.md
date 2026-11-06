@@ -85,7 +85,10 @@ IndexedDB contiene dos tablas versionadas:
 
 Cada workspace incluye controles de simulacion. El esquema Zod asigna defaults de Fase 2 al leer un
 registro de Fase 1, de modo que coordenadas y nombres existentes se conservan sin una migracion
-destructiva. Los cambios de fisica se guardan en la misma transaccion de workspace.
+destructiva. La hidratacion valida y recupera cada ID por separado: un registro ausente o invalido se
+repara con su default sin reemplazar sus tres hermanos validos. Los cambios se serializan en una cola
+por workspace y los ajustes en otra cola, evitando que una escritura lenta de una edicion anterior
+sobrescriba una edicion rapida posterior.
 
 La importacion acepta como maximo 1 MB, exige JSON version 1 y valida el documento completo con Zod
 antes de escribir una transaccion. La exportacion no incluye credenciales ni datos de juegos.

@@ -17,6 +17,11 @@ All notable changes to DragonBallistics Pro are recorded here.
 
 - Workbench now reports real flight time, range, maximum height and termination state.
 - Automated suite now covers the Phase 2 engine and visual controls.
+- Curved-step collision detection now adaptively subdivides and refines physical contacts instead of
+  relying on a single endpoint chord.
+- IndexedDB hydration repairs workspaces individually and serializes rapid writes per workspace.
+- CI now includes `pnpm format:check` through the required `pnpm check` gate.
+- The transitive development dependency `minimatch` is pinned to patched version 11.0.1.
 
 ## 0.1.0 - 2026-11-05
 
