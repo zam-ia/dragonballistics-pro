@@ -313,6 +313,28 @@ describe('deterministic inverse projectile solver', () => {
     expect(result.solutions.length).toBeGreaterThan(0);
   });
 
+  it('reserves wall time after discovering provisional hits and verifies before deadline', () => {
+    let clock = 0;
+    const simulation = scenario({
+      collisions: {
+        groundY: 0,
+        terrain: [],
+        targets: [{ id: 'goal', center: { x: 0, y: 0 }, radius: 0.25 }],
+      },
+    });
+    const result = solveProjectile(
+      request(simulation, {
+        budgets: { maximumEvaluations: 320, maximumWallTimeMs: 100, coarseFraction: 1, refinementRounds: 6 },
+      }),
+      { now: () => { clock += 1; return clock; } },
+    );
+    expect(result.stopReason).toBe('time-limit');
+    expect(result.messages.some((m) => m.message.includes('reservar tiempo'))).toBe(true);
+    expect(result.verificationEvaluations).toBeGreaterThan(0);
+    expect(result.solutions.some((c) => c.hit && c.verifiedWithFullSimulation)).toBe(true);
+    expect(result.evaluatedCandidates).toBeLessThanOrEqual(320);
+  });
+
   it('honors cancellation before evaluating another candidate', () => {
     let count = 0;
     const result = solveProjectile(request(), { isCancelled: () => ++count > 7 });
