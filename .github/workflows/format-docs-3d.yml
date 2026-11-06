@@ -1,0 +1,33 @@
+name: Format Phase 3D Documentation
+on:
+  push:
+    branches:
+      - feature/inverse-solver
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/inverse-solver
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write docs/decisions/0006-inverse-ui-and-workspace-isolation.md docs/reports/inverse-solver-phase-3d.md docs/roadmap.md CHANGELOG.md
+      - name: Commit formatted report
+        run: |
+          if ! git diff --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add docs/decisions/0006-inverse-ui-and-workspace-isolation.md docs/reports/inverse-solver-phase-3d.md docs/roadmap.md CHANGELOG.md
+            git commit -m 'style(docs): format Phase 3D technical report'
+            git push origin HEAD:feature/inverse-solver
+          fi
