@@ -337,7 +337,10 @@ export function solveProjectile(
   // The evaluator does not spend them; only the subsequent verifier may.
   const reservedVerifications = Math.min(
     Math.max(0, budgets.maximumEvaluations - 1),
-    Math.max(1, Math.min(input.requestedSolutions + 2, Math.ceil(budgets.maximumEvaluations * 0.1))),
+    Math.max(
+      1,
+      Math.min(input.requestedSolutions + 2, Math.ceil(budgets.maximumEvaluations * 0.1)),
+    ),
   );
   const searchLimit = budgets.maximumEvaluations - reservedVerifications;
   const searchAllowed = () => {
@@ -388,7 +391,11 @@ export function solveProjectile(
   // Reserve time and evaluations for refining and physically verifying impacts.
   const coarseLimit = Math.max(
     1,
-    Math.min(planningCap, searchLimit, Math.floor(budgets.maximumEvaluations * budgets.coarseFraction)),
+    Math.min(
+      planningCap,
+      searchLimit,
+      Math.floor(budgets.maximumEvaluations * budgets.coarseFraction),
+    ),
   );
   for (const [angle, power] of coarsePoints(input.angleRange, input.powerRange)) {
     if (coarseEvaluations >= coarseLimit || !searchAllowed()) break;

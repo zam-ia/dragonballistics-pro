@@ -54,7 +54,10 @@ export class SolverWorkerController {
   private disposed = false;
   private snapshot: SolverControllerSnapshot = { ...initialSnapshot };
 
-  constructor(createWorker: () => Worker = defaultWorkerFactory, now: () => number = () => performance.now()) {
+  constructor(
+    createWorker: () => Worker = defaultWorkerFactory,
+    now: () => number = () => performance.now(),
+  ) {
     this.createWorker = createWorker;
     this.now = now;
   }
@@ -88,8 +91,13 @@ export class SolverWorkerController {
     const elapsed = this.now() - this.active.startedAt;
     this.active = null;
     this.release(worker);
-    this.publish({ ...this.snapshot, state: 'error', error: message,
-      result: null, totalMilliseconds: elapsed });
+    this.publish({
+      ...this.snapshot,
+      state: 'error',
+      error: message,
+      result: null,
+      totalMilliseconds: elapsed,
+    });
   }
 
   start(input: SolverInput): string {
@@ -103,9 +111,13 @@ export class SolverWorkerController {
     try {
       worker = this.createWorker();
     } catch (error) {
-      this.publish({ ...initialSnapshot, state: 'error', jobId,
+      this.publish({
+        ...initialSnapshot,
+        state: 'error',
+        jobId,
         error: error instanceof Error ? error.message : 'No se pudo crear el Worker.',
-        workerCreationMilliseconds: this.now() - startedAt });
+        workerCreationMilliseconds: this.now() - startedAt,
+      });
       return jobId;
     }
     const workerCreationMilliseconds = this.now() - startedAt;
@@ -123,14 +135,18 @@ export class SolverWorkerController {
       if (message.type === 'PROGRESS') {
         const previous = this.snapshot.progress;
         const phases = { coarse: 0, refinement: 1, complete: 2 };
-        if (previous && (message.progress.evaluatedCandidates < previous.evaluatedCandidates ||
-          phases[message.progress.phase] < phases[previous.phase] ||
-          message.progress.hitCount < previous.hitCount)) return;
+        if (
+          previous &&
+          (message.progress.evaluatedCandidates < previous.evaluatedCandidates ||
+            phases[message.progress.phase] < phases[previous.phase] ||
+            message.progress.hitCount < previous.hitCount)
+        )
+          return;
         this.publish({
           ...this.snapshot,
           progress: message.progress,
-          firstProgressMilliseconds: this.snapshot.firstProgressMilliseconds ??
-            this.now() - startedAt,
+          firstProgressMilliseconds:
+            this.snapshot.firstProgressMilliseconds ?? this.now() - startedAt,
         });
         return;
       }
@@ -139,17 +155,25 @@ export class SolverWorkerController {
         return;
       }
       // A result claiming unverified hits must never reach consumers.
-      if (message.result.solutions.some((candidate) =>
-        candidate.hit && !candidate.verifiedWithFullSimulation)) {
+      if (
+        message.result.solutions.some(
+          (candidate) => candidate.hit && !candidate.verifiedWithFullSimulation,
+        )
+      ) {
         this.fail(jobId, worker, 'El Worker devolvio un impacto sin verificacion fisica.');
         return;
       }
       const totalMilliseconds = this.now() - startedAt;
       this.active = null;
       this.release(worker);
-      this.publish({ ...this.snapshot, state: 'completed',
-        progress: this.snapshot.progress, result: message.result,
-        error: null, totalMilliseconds });
+      this.publish({
+        ...this.snapshot,
+        state: 'completed',
+        progress: this.snapshot.progress,
+        result: message.result,
+        error: null,
+        totalMilliseconds,
+      });
     };
     worker.onerror = (event: ErrorEvent) => {
       event.preventDefault?.();
@@ -159,18 +183,20 @@ export class SolverWorkerController {
       this.fail(jobId, worker, 'No se pudo deserializar un mensaje del Worker.');
     };
 
-    this.publish({ ...initialSnapshot, state: 'running', jobId,
-      workerCreationMilliseconds });
+    this.publish({ ...initialSnapshot, state: 'running', jobId, workerCreationMilliseconds });
     try {
       const beforePost = this.now();
       const message: SolverWorkerRequest = { type: 'START', jobId, input };
       worker.postMessage(message);
       if (isCurrent()) {
-        this.publish({ ...this.snapshot,
-          messageDispatchMilliseconds: this.now() - beforePost });
+        this.publish({ ...this.snapshot, messageDispatchMilliseconds: this.now() - beforePost });
       }
     } catch (error) {
-      this.fail(jobId, worker, error instanceof Error ? error.message : 'No se pudo iniciar el trabajo.');
+      this.fail(
+        jobId,
+        worker,
+        error instanceof Error ? error.message : 'No se pudo iniciar el trabajo.',
+      );
     }
     return jobId;
   }
@@ -186,10 +212,14 @@ export class SolverWorkerController {
       // Termination is authoritative, even if posting CANCEL fails.
     }
     this.release(worker);
-    this.publish({ ...this.snapshot, state: 'cancelled',
-      result: null, error: null,
+    this.publish({
+      ...this.snapshot,
+      state: 'cancelled',
+      result: null,
+      error: null,
       totalMilliseconds: this.now() - startedAt,
-      cancelCallMilliseconds: this.now() - before });
+      cancelCallMilliseconds: this.now() - before,
+    });
     return true;
   }
 

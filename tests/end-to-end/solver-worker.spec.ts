@@ -16,7 +16,9 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => Boolean(window.__solverWorkerHarness));
 });
 
-test('real bundled Worker returns verified physics results without blocking the page', async ({ page }) => {
+test('real bundled Worker returns verified physics results without blocking the page', async ({
+  page,
+}) => {
   const metrics = await page.evaluate(async () => {
     const harness = window.__solverWorkerHarness!;
     const controller = harness.create();
@@ -40,7 +42,9 @@ test('real bundled Worker returns verified physics results without blocking the 
           resolve({
             state: snapshot.state,
             status: snapshot.result?.status ?? null,
-            verifiedHits: snapshot.result?.solutions.filter((c) => c.hit && c.verifiedWithFullSimulation).length ?? 0,
+            verifiedHits:
+              snapshot.result?.solutions.filter((c) => c.hit && c.verifiedWithFullSimulation)
+                .length ?? 0,
             progress,
             workerCreationMs: snapshot.workerCreationMilliseconds,
             firstProgressMs: snapshot.firstProgressMilliseconds,
@@ -68,7 +72,9 @@ test('real bundled Worker returns verified physics results without blocking the 
   expect(metrics.mainThreadTimerTicks).toBeGreaterThan(1);
 });
 
-test('real Worker can be forcibly cancelled during high-resolution coarse search and replaced', async ({ page }) => {
+test('real Worker can be forcibly cancelled during high-resolution coarse search and replaced', async ({
+  page,
+}) => {
   const metrics = await page.evaluate(async () => {
     const harness = window.__solverWorkerHarness!;
     const controller = harness.create();
@@ -87,13 +93,20 @@ test('real Worker can be forcibly cancelled during high-resolution coarse search
       mainThreadTimerTicks: number;
     }>((resolve, reject) => {
       controller.subscribe((snapshot) => {
-        if (snapshot.state === 'running' && snapshot.jobId === firstJob &&
-            snapshot.progress?.phase === 'coarse' &&
-            snapshot.progress.evaluatedCandidates >= 16 && secondJob === '') {
+        if (
+          snapshot.state === 'running' &&
+          snapshot.jobId === firstJob &&
+          snapshot.progress?.phase === 'coarse' &&
+          snapshot.progress.evaluatedCandidates >= 16 &&
+          secondJob === ''
+        ) {
           const before = performance.now();
           const cancelled = controller.cancel();
           cancelledAt = controller.getSnapshot().cancelCallMilliseconds ?? -1;
-          if (!cancelled) { reject(new Error('Cancellation rejected')); return; }
+          if (!cancelled) {
+            reject(new Error('Cancellation rejected'));
+            return;
+          }
           secondJob = controller.start(harness.makeInput());
           restartCost = performance.now() - before;
         }
@@ -101,7 +114,9 @@ test('real Worker can be forcibly cancelled during high-resolution coarse search
         if (snapshot.state === 'completed' && snapshot.jobId === secondJob) {
           resolve({
             status: snapshot.result?.status ?? 'missing',
-            verifiedHits: snapshot.result?.solutions.filter((c) => c.hit && c.verifiedWithFullSimulation).length ?? 0,
+            verifiedHits:
+              snapshot.result?.solutions.filter((c) => c.hit && c.verifiedWithFullSimulation)
+                .length ?? 0,
             jobId: snapshot.jobId,
             cancelCallMs: cancelledAt,
             restartMs: restartCost,
@@ -124,19 +139,22 @@ test('real Worker can be forcibly cancelled during high-resolution coarse search
   expect(metrics.mainThreadTimerTicks).toBeGreaterThan(1);
 });
 
-test('real Worker rejects malformed runtime input and recovers on a fresh job', async ({ page }) => {
+test('real Worker rejects malformed runtime input and recovers on a fresh job', async ({
+  page,
+}) => {
   const result = await page.evaluate(async () => {
     const harness = window.__solverWorkerHarness!;
     const controller = harness.create();
     const states: string[] = [];
-    const wait = (expected: string) => new Promise<void>((resolve) => {
-      const unsubscribe = controller.subscribe((snapshot) => {
-        if (snapshot.state === expected) {
-          unsubscribe();
-          resolve();
-        }
+    const wait = (expected: string) =>
+      new Promise<void>((resolve) => {
+        const unsubscribe = controller.subscribe((snapshot) => {
+          if (snapshot.state === expected) {
+            unsubscribe();
+            resolve();
+          }
+        });
       });
-    });
     const malformed = harness.makeInput();
     (malformed.simulation.collisions as unknown as { targets: unknown }).targets = null;
     const failure = wait('error');

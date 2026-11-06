@@ -20,10 +20,16 @@ scope.onmessage = (event: MessageEvent<unknown>) => {
   const request = parseWorkerRequest(event.data);
   if (!request) {
     const raw = event.data;
-    const jobId = raw && typeof raw === 'object' && 'jobId' in raw &&
-      typeof raw.jobId === 'string' ? raw.jobId : 'invalid-job';
-    send({ type: 'ERROR', jobId, code: 'invalid-message',
-      message: 'El mensaje no cumple el contrato serializable del Worker.' });
+    const jobId =
+      raw && typeof raw === 'object' && 'jobId' in raw && typeof raw.jobId === 'string'
+        ? raw.jobId
+        : 'invalid-job';
+    send({
+      type: 'ERROR',
+      jobId,
+      code: 'invalid-message',
+      message: 'El mensaje no cumple el contrato serializable del Worker.',
+    });
     return;
   }
   if (request.type === 'CANCEL') {
@@ -31,8 +37,12 @@ scope.onmessage = (event: MessageEvent<unknown>) => {
     return;
   }
   if (activeJobId !== null) {
-    send({ type: 'ERROR', jobId: request.jobId, code: 'worker-busy',
-      message: 'El Worker ya ejecuta otro trabajo.' });
+    send({
+      type: 'ERROR',
+      jobId: request.jobId,
+      code: 'worker-busy',
+      message: 'El Worker ya ejecuta otro trabajo.',
+    });
     return;
   }
 
@@ -46,9 +56,11 @@ scope.onmessage = (event: MessageEvent<unknown>) => {
       isCancelled: () => cancelled,
       onProgress: (progress) => {
         const now = performance.now();
-        if (progress.phase !== lastPhase ||
-            progress.evaluatedCandidates - lastCount >= 16 ||
-            now - lastSentAt >= 50) {
+        if (
+          progress.phase !== lastPhase ||
+          progress.evaluatedCandidates - lastCount >= 16 ||
+          now - lastSentAt >= 50
+        ) {
           lastSentAt = now;
           lastCount = progress.evaluatedCandidates;
           lastPhase = progress.phase;

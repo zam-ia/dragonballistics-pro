@@ -11,7 +11,12 @@ const input: SolverInput = {
   angleRange: { minimum: 20, maximum: 70 },
   powerRange: { minimum: 60, maximum: 90 },
   requestedSolutions: 2,
-  budgets: { maximumEvaluations: 32, maximumWallTimeMs: 2000, coarseFraction: 0.5, refinementRounds: 2 },
+  budgets: {
+    maximumEvaluations: 32,
+    maximumWallTimeMs: 2000,
+    coarseFraction: 0.5,
+    refinementRounds: 2,
+  },
 };
 
 class FakeWorker {
@@ -32,8 +37,12 @@ class FakeWorker {
 }
 
 const progress: SolverProgress = {
-  phase: 'coarse', evaluatedCandidates: 16, coarseEvaluations: 16,
-  refinementEvaluations: 0, verificationEvaluations: 0, hitCount: 0,
+  phase: 'coarse',
+  evaluatedCandidates: 16,
+  coarseEvaluations: 16,
+  refinementEvaluations: 0,
+  verificationEvaluations: 0,
+  hitCount: 0,
   elapsedMilliseconds: 100,
 };
 
@@ -50,16 +59,44 @@ function setup() {
 describe('worker protocol guards', () => {
   it('accepts serializable START and CANCEL and rejects malformed payloads', () => {
     expect(parseWorkerRequest({ type: 'START', jobId: 'a', input })?.type).toBe('START');
-    expect(parseWorkerRequest({ type: 'CANCEL', jobId: 'a' })).toEqual({ type: 'CANCEL', jobId: 'a' });
+    expect(parseWorkerRequest({ type: 'CANCEL', jobId: 'a' })).toEqual({
+      type: 'CANCEL',
+      jobId: 'a',
+    });
     expect(parseWorkerRequest({ type: 'START', jobId: 'a', input: null })).toBeNull();
     expect(parseWorkerRequest({ type: 'START', jobId: '', input })).toBeNull();
-    expect(parseWorkerRequest({ type: 'START', jobId: 'a', input: {
-      ...input, simulation: { ...input.simulation, collisions: null },
-    } })).toBeNull();
-    expect(parseWorkerResponse({ type: 'PROGRESS', jobId: 'a', progress: { ...progress, hitCount: -1 } })).toBeNull();
-    expect(parseWorkerResponse({ type: 'RESULT', jobId: 'a',
-      result: { status: 'succeeded', solutions: [{ hit: true, verifiedWithFullSimulation: false, angleDegrees: 30, power: 40 }],
-        evaluatedCandidates: 2, verificationEvaluations: 0, hitCount: 1 } })).toBeNull();
+    expect(
+      parseWorkerRequest({
+        type: 'START',
+        jobId: 'a',
+        input: {
+          ...input,
+          simulation: { ...input.simulation, collisions: null },
+        },
+      }),
+    ).toBeNull();
+    expect(
+      parseWorkerResponse({
+        type: 'PROGRESS',
+        jobId: 'a',
+        progress: { ...progress, hitCount: -1 },
+      }),
+    ).toBeNull();
+    expect(
+      parseWorkerResponse({
+        type: 'RESULT',
+        jobId: 'a',
+        result: {
+          status: 'succeeded',
+          solutions: [
+            { hit: true, verifiedWithFullSimulation: false, angleDegrees: 30, power: 40 },
+          ],
+          evaluatedCandidates: 2,
+          verificationEvaluations: 0,
+          hitCount: 1,
+        },
+      }),
+    ).toBeNull();
   });
 });
 
@@ -110,9 +147,14 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
     workers[1]?.emit({ type: 'PROGRESS', jobId: a, progress });
     expect(controller.getSnapshot().progress).toBeNull();
     workers[1]?.emit({ type: 'PROGRESS', jobId: b, progress });
-    workers[1]?.emit({ type: 'PROGRESS', jobId: b, progress: {
-      ...progress, evaluatedCandidates: 2,
-    } });
+    workers[1]?.emit({
+      type: 'PROGRESS',
+      jobId: b,
+      progress: {
+        ...progress,
+        evaluatedCandidates: 2,
+      },
+    });
     expect(controller.getSnapshot().progress?.evaluatedCandidates).toBe(16);
     controller.dispose();
   });
@@ -123,11 +165,15 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
       const { controller, workers } = setup();
       const a = controller.start(input);
       const staleCallback = workers[0]?.onmessage;
-      workers[0]?.emit({ type: 'PROGRESS', jobId: a, progress: {
-        ...progress,
-        phase,
-        refinementEvaluations: phase === 'refinement' ? 4 : 0,
-      } });
+      workers[0]?.emit({
+        type: 'PROGRESS',
+        jobId: a,
+        progress: {
+          ...progress,
+          phase,
+          refinementEvaluations: phase === 'refinement' ? 4 : 0,
+        },
+      });
       expect(controller.getSnapshot().progress?.phase).toBe(phase);
       expect(controller.cancel()).toBe(true);
       const b = controller.start(input);
@@ -141,7 +187,12 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
   it('recovers after Worker errors and runtime protocol errors', () => {
     const { controller, workers } = setup();
     const a = controller.start(input);
-    workers[0]?.emit({ type: 'ERROR', jobId: a, code: 'invalid-message', message: 'input malformado' });
+    workers[0]?.emit({
+      type: 'ERROR',
+      jobId: a,
+      code: 'invalid-message',
+      message: 'input malformado',
+    });
     expect(controller.getSnapshot().state).toBe('error');
     expect(workers[0]?.terminated).toBe(true);
     const b = controller.start(input);
@@ -166,11 +217,20 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
     fail = false;
     const id = controller.start(input);
     const raw = solveProjectile(input, { now: () => 0 });
-    const forged: SolverResult = { ...raw, solutions: [{
-      ...raw.solutions[0]!, hit: true, verifiedWithFullSimulation: false,
-    }] };
+    const forged: SolverResult = {
+      ...raw,
+      solutions: [
+        {
+          ...raw.solutions[0]!,
+          hit: true,
+          verifiedWithFullSimulation: false,
+        },
+      ],
+    };
     // Deliberately bypass protocol validation and inspect the controller's rejection.
-    worker.onmessage?.({ data: { type: 'RESULT', jobId: id, result: forged } } as MessageEvent<unknown>);
+    worker.onmessage?.({
+      data: { type: 'RESULT', jobId: id, result: forged },
+    } as MessageEvent<unknown>);
     expect(controller.getSnapshot().state).toBe('error');
     expect(worker.terminated).toBe(true);
     controller.dispose();

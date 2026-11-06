@@ -10,7 +10,9 @@ export default defineConfig({
       // Non-visual integration fixture exercises a real bundled Worker in Playwright.
       input: {
         app: fileURLToPath(new URL('./index.html', import.meta.url)),
-        solverWorkerHarness: fileURLToPath(new URL('./solver-worker-harness.html', import.meta.url)),
+        solverWorkerHarness: fileURLToPath(
+          new URL('./solver-worker-harness.html', import.meta.url),
+        ),
       },
     },
   },

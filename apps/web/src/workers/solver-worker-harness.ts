@@ -3,10 +3,7 @@ import type { SolverInput } from '@dragonballistics/physics';
 import { createSolverWorkerController } from './solver-worker-controller';
 
 function makeInput(highResolution = false): SolverInput {
-  const simulation = createDefaultSimulationInput(
-    { x: 0, y: 0 },
-    { x: 140, y: 1 },
-  );
+  const simulation = createDefaultSimulationInput({ x: 0, y: 0 }, { x: 140, y: 1 });
   return {
     simulation: {
       ...simulation,

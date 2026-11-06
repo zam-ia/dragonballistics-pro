@@ -202,7 +202,12 @@ describe('deterministic inverse projectile solver', () => {
     const limited = request(aim, {
       angleRange: { minimum: 20, maximum: 40 },
       requestedSolutions: 1,
-      budgets: { maximumEvaluations: 4, maximumWallTimeMs: 5000, coarseFraction: 0.75, refinementRounds: 4 },
+      budgets: {
+        maximumEvaluations: 4,
+        maximumWallTimeMs: 5000,
+        coarseFraction: 0.75,
+        refinementRounds: 4,
+      },
     });
     const result = solveProjectile(limited);
     expect(result.coarseEvaluations).toBe(3);
@@ -214,7 +219,12 @@ describe('deterministic inverse projectile solver', () => {
     const impossibleToVerify = solveProjectile({
       ...limited,
       angleRange: { minimum: 30, maximum: 30 },
-      budgets: { maximumEvaluations: 1, maximumWallTimeMs: 5000, coarseFraction: 1, refinementRounds: 1 },
+      budgets: {
+        maximumEvaluations: 1,
+        maximumWallTimeMs: 5000,
+        coarseFraction: 1,
+        refinementRounds: 1,
+      },
     });
     expect(impossibleToVerify.status).toBe('budget-exhausted');
     expect(impossibleToVerify.evaluatedCandidates).toBe(1);
@@ -222,15 +232,31 @@ describe('deterministic inverse projectile solver', () => {
   });
 
   it('finds a tiny target only after refining coarse misses', () => {
-    const target = { x: 140, y: 140 * Math.tan((32.5 * Math.PI) / 180) -
-      (9.81 * 140 * 140) / (2 * 40 * 40 * Math.cos((32.5 * Math.PI) / 180) ** 2) };
-    const input = request(scenario({
-      collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: target, radius: 0.2 }] },
-    }), {
-      angleRange: { minimum: 20, maximum: 40 },
-      requestedSolutions: 1,
-      budgets: { maximumEvaluations: 40, maximumWallTimeMs: 5000, coarseFraction: 0.08, refinementRounds: 8 },
-    });
+    const target = {
+      x: 140,
+      y:
+        140 * Math.tan((32.5 * Math.PI) / 180) -
+        (9.81 * 140 * 140) / (2 * 40 * 40 * Math.cos((32.5 * Math.PI) / 180) ** 2),
+    };
+    const input = request(
+      scenario({
+        collisions: {
+          groundY: 0,
+          terrain: [],
+          targets: [{ id: 'goal', center: target, radius: 0.2 }],
+        },
+      }),
+      {
+        angleRange: { minimum: 20, maximum: 40 },
+        requestedSolutions: 1,
+        budgets: {
+          maximumEvaluations: 40,
+          maximumWallTimeMs: 5000,
+          coarseFraction: 0.08,
+          refinementRounds: 8,
+        },
+      },
+    );
     const progress: Array<{ phase: string; hitCount: number }> = [];
     const result = solveProjectile(input, {
       onProgress: (p) => progress.push({ phase: p.phase, hitCount: p.hitCount }),
@@ -244,11 +270,18 @@ describe('deterministic inverse projectile solver', () => {
   });
 
   it('stops at the evaluation limit and returns useful partial candidates', () => {
-    const result = solveProjectile(request(scenario(), {
-      angleRange: { minimum: 30, maximum: 30 },
-      powerRange: { minimum: 40, maximum: 40 },
-      budgets: { maximumEvaluations: 1, maximumWallTimeMs: 5000, coarseFraction: 1, refinementRounds: 6 },
-    }));
+    const result = solveProjectile(
+      request(scenario(), {
+        angleRange: { minimum: 30, maximum: 30 },
+        powerRange: { minimum: 40, maximum: 40 },
+        budgets: {
+          maximumEvaluations: 1,
+          maximumWallTimeMs: 5000,
+          coarseFraction: 1,
+          refinementRounds: 6,
+        },
+      }),
+    );
     expect(result.status).toBe('budget-exhausted');
     expect(result.exhaustedBudget).toBe('evaluations');
     expect(result.evaluatedCandidates).toBe(1);
