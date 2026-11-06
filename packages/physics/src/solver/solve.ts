@@ -390,7 +390,9 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
   // A summary hit does not become a reported hit without independent full simulation.
   // Verification also consumes an evaluation slot and the same wall-time budget.
   const provisional = deduplicate(entries, input.angleRange, input.powerRange);
-  for (const entry of provisional.filter((e) => e.provisionalHit).sort(compareEntries)) {
+  const hitsToVerify = provisional.filter((e) => e.provisionalHit).sort((a, b) => a.candidate.angleDegrees - b.candidate.angleDegrees);
+  const verificationOrder = hitsToVerify.length < 2 ? hitsToVerify : [hitsToVerify[0], hitsToVerify[hitsToVerify.length - 1], ...hitsToVerify.slice(1, -1)];
+  for (const entry of verificationOrder) {
     if (!allowed()) break;
     const full = simulateProjectile({
       ...input.simulation,
@@ -409,6 +411,8 @@ export function solveProjectile(input: SolverInput, options: SolverExecutionOpti
     entry.candidate.maximumHeight = full.maximumHeight;
     notify();
   }
+  // Unverified summary hits remain approximations, never successful solutions.
+  for (const entry of provisional) entry.provisionalHit = entry.candidate.hit;
   classifyArcs(provisional, input);
 
   const ranked = provisional.sort(compareEntries);
