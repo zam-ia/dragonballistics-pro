@@ -12,7 +12,13 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { createSolverWorkerController } from '../../workers/solver-worker-controller';
-import { initialSearchForm, isConfirmedHit, solverResultStatus, validateSolverForm, type FormKey } from './inverse-solver-model';
+import {
+  initialSearchForm,
+  isConfirmedHit,
+  solverResultStatus,
+  validateSolverForm,
+  type FormKey,
+} from './inverse-solver-model';
 import './inverse-solver.css';
 
 interface Props {

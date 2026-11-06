@@ -219,7 +219,9 @@ function validResult(value: unknown): value is SolverResult {
 
   if (
     value.evaluatedCandidates !==
-      (value.coarseEvaluations as number) + (value.refinementEvaluations as number) + (value.verificationEvaluations as number) ||
+      (value.coarseEvaluations as number) +
+        (value.refinementEvaluations as number) +
+        (value.verificationEvaluations as number) ||
     (value.hitCount as number) > (value.verificationEvaluations as number) ||
     value.solutions.filter((candidate: unknown) => record(candidate) && candidate.hit).length >
       (value.hitCount as number)
@@ -265,7 +267,9 @@ export function parseWorkerResponse(value: unknown): SolverWorkerResponse | null
       ].every(nonnegativeInteger) &&
       nonnegative(p.elapsedMilliseconds) &&
       p.evaluatedCandidates ===
-        (p.coarseEvaluations as number) + (p.refinementEvaluations as number) + (p.verificationEvaluations as number) &&
+        (p.coarseEvaluations as number) +
+          (p.refinementEvaluations as number) +
+          (p.verificationEvaluations as number) &&
       (p.hitCount as number) <= (p.verificationEvaluations as number)
     ) {
       return { type: 'PROGRESS', jobId: value.jobId, progress: p as unknown as SolverProgress };

@@ -1,4 +1,11 @@
-import { DEFAULT_SOLVER_BUDGETS, SOLVER_HARD_LIMITS, type SimulationInput, type SolverCandidate, type SolverInput, type SolverResult } from '@dragonballistics/physics';
+import {
+  DEFAULT_SOLVER_BUDGETS,
+  SOLVER_HARD_LIMITS,
+  type SimulationInput,
+  type SolverCandidate,
+  type SolverInput,
+  type SolverResult,
+} from '@dragonballistics/physics';
 
 export type FormKey =
   | 'targetId'
