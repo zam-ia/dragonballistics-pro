@@ -191,21 +191,69 @@ describe('deterministic inverse projectile solver', () => {
     }
   });
 
+  it('reserves full simulations and never reports an unverified provisional hit', () => {
+    const aim = scenario({
+      collisions: {
+        groundY: 0,
+        terrain: [],
+        targets: [{ id: 'goal', center: { x: 140, y: 0.7140376865 }, radius: 0.5 }],
+      },
+    });
+    const limited = request(aim, {
+      angleRange: { minimum: 20, maximum: 40 },
+      requestedSolutions: 1,
+      budgets: { maximumEvaluations: 4, maximumWallTimeMs: 5000, coarseFraction: 0.75, refinementRounds: 4 },
+    });
+    const result = solveProjectile(limited);
+    expect(result.coarseEvaluations).toBe(3);
+    expect(result.refinementEvaluations).toBe(0);
+    expect(result.verificationEvaluations).toBe(1);
+    expect(result.evaluatedCandidates).toBe(4);
+    expect(verified(result).length).toBe(1);
+    expect(verified(result)[0]?.verifiedWithFullSimulation).toBe(true);
+    const impossibleToVerify = solveProjectile({
+      ...limited,
+      angleRange: { minimum: 30, maximum: 30 },
+      budgets: { maximumEvaluations: 1, maximumWallTimeMs: 5000, coarseFraction: 1, refinementRounds: 1 },
+    });
+    expect(impossibleToVerify.status).toBe('budget-exhausted');
+    expect(impossibleToVerify.evaluatedCandidates).toBe(1);
+    expect(impossibleToVerify.solutions.every((c) => !c.hit)).toBe(true);
+  });
+
+  it('finds a tiny target only after refining coarse misses', () => {
+    const target = { x: 140, y: 140 * Math.tan((32.5 * Math.PI) / 180) -
+      (9.81 * 140 * 140) / (2 * 40 * 40 * Math.cos((32.5 * Math.PI) / 180) ** 2) };
+    const input = request(scenario({
+      collisions: { groundY: 0, terrain: [], targets: [{ id: 'goal', center: target, radius: 0.2 }] },
+    }), {
+      angleRange: { minimum: 20, maximum: 40 },
+      requestedSolutions: 1,
+      budgets: { maximumEvaluations: 40, maximumWallTimeMs: 5000, coarseFraction: 0.08, refinementRounds: 8 },
+    });
+    const progress: Array<{ phase: string; hitCount: number }> = [];
+    const result = solveProjectile(input, {
+      onProgress: (p) => progress.push({ phase: p.phase, hitCount: p.hitCount }),
+    });
+    expect(result.coarseEvaluations).toBe(3);
+    expect(progress.find((p) => p.phase === 'refinement')?.hitCount).toBe(0);
+    expect(result.refinementEvaluations).toBeGreaterThan(0);
+    expect(verified(result).length).toBe(1);
+    expect(verified(result)[0]?.angleDegrees).toBeCloseTo(32.5, 5);
+    expect(result.verificationEvaluations).toBeGreaterThan(0);
+  });
+
   it('stops at the evaluation limit and returns useful partial candidates', () => {
-    const result = solveProjectile(
-      request(scenario(), {
-        budgets: {
-          maximumEvaluations: 5,
-          maximumWallTimeMs: 5000,
-          coarseFraction: 0.8,
-          refinementRounds: 6,
-        },
-      }),
-    );
+    const result = solveProjectile(request(scenario(), {
+      angleRange: { minimum: 30, maximum: 30 },
+      powerRange: { minimum: 40, maximum: 40 },
+      budgets: { maximumEvaluations: 1, maximumWallTimeMs: 5000, coarseFraction: 1, refinementRounds: 6 },
+    }));
     expect(result.status).toBe('budget-exhausted');
     expect(result.exhaustedBudget).toBe('evaluations');
-    expect(result.evaluatedCandidates).toBe(5);
+    expect(result.evaluatedCandidates).toBe(1);
     expect(result.solutions.length).toBeGreaterThan(0);
+    expect(result.solutions.every((candidate) => !candidate.hit)).toBe(true);
   });
 
   it('stops at the time limit using an injected monotonically advancing clock', () => {
