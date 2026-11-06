@@ -343,8 +343,18 @@ export function solveProjectile(
     ),
   );
   const searchLimit = budgets.maximumEvaluations - reservedVerifications;
+  // Reserve a small wall-clock window only after there is something to verify.
+  // It is a best-effort budget, not a promise that a full evaluation fits.
+  const verificationTimeReserve = Math.min(300, budgets.maximumWallTimeMs * 0.15);
+  let observedProvisionalHit = false;
+  let verificationTimeWindowReserved = false;
   const searchAllowed = () => {
     if (coarseEvaluations + refinementEvaluations >= searchLimit) return false;
+    if (observedProvisionalHit && elapsed() >= budgets.maximumWallTimeMs - verificationTimeReserve) {
+      verificationTimeWindowReserved = true;
+      stopReason = 'time-limit';
+      return false;
+    }
     return allowed();
   };
   const evaluate = (angle: number, power: number): SearchEntry | null => {
@@ -357,6 +367,7 @@ export function solveProjectile(
       { targetId: input.targetId },
     );
     const entry = entryFromSummary(angle, power, summary, input.targetId);
+    if (entry.provisionalHit) observedProvisionalHit = true;
     cache.set(key, entry);
     entries.push(entry);
     if (phase === 'coarse') coarseEvaluations += 1;
@@ -536,7 +547,9 @@ export function solveProjectile(
         finalStopReason === 'cancelled'
           ? 'Busqueda cancelada.'
           : finalStopReason === 'time-limit'
-            ? 'Limite temporal alcanzado.'
+            ? verificationTimeWindowReserved
+              ? 'Busqueda detenida para reservar tiempo a la verificacion fisica.'
+              : 'Limite temporal alcanzado.'
             : 'Limite de evaluaciones alcanzado.',
     });
   }
