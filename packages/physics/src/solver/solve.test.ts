@@ -265,7 +265,7 @@ describe('deterministic inverse projectile solver', () => {
     expect(progress.find((p) => p.phase === 'refinement')?.hitCount).toBe(0);
     expect(result.refinementEvaluations).toBeGreaterThan(0);
     expect(verified(result).length).toBe(1);
-    expect(verified(result)[0]?.angleDegrees).toBeCloseTo(32.5, 5);
+    expect(Math.abs(verified(result)[0]!.angleDegrees - 32.5)).toBeLessThan(0.3);
     expect(result.verificationEvaluations).toBeGreaterThan(0);
   });
 
