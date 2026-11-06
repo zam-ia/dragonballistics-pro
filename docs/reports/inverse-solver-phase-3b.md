@@ -50,14 +50,14 @@ Workflow `Quality`, ejecución [42304481394](https://github.com/zam-ia/dragonbal
 - Playwright: **3/3** recorridos correctos.
 - `pnpm benchmark:solver`: **1/1** benchmark reproducible correcto.
 
-| Escenario | Radio | Evaluaciones | Tiempo real (ms) | Eval/s | Impactos confirmados | Estado |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Sin viento, grande | 5 | 153 | 364.44 | 419.83 | 21 | succeeded |
-| Sin viento, pequeño | 0.8 | 137 | 267.56 | 512.04 | 5 | succeeded |
-| Viento horizontal, grande | 5 | 150 | 265.82 | 564.29 | 18 | succeeded |
-| Viento horizontal, pequeño | 0.8 | 137 | 242.04 | 566.03 | 5 | succeeded |
-| Viento vertical, grande | 5 | 149 | 284.40 | 523.91 | 17 | succeeded |
-| Viento vertical, pequeño | 0.8 | 136 | 270.35 | 503.04 | 4 | succeeded |
+| Escenario                  | Radio | Evaluaciones | Tiempo real (ms) | Eval/s | Impactos confirmados | Estado    |
+| -------------------------- | ----: | -----------: | ---------------: | -----: | -------------------: | --------- |
+| Sin viento, grande         |     5 |          153 |           364.44 | 419.83 |                   21 | succeeded |
+| Sin viento, pequeño        |   0.8 |          137 |           267.56 | 512.04 |                    5 | succeeded |
+| Viento horizontal, grande  |     5 |          150 |           265.82 | 564.29 |                   18 | succeeded |
+| Viento horizontal, pequeño |   0.8 |          137 |           242.04 | 566.03 |                    5 | succeeded |
+| Viento vertical, grande    |     5 |          149 |           284.40 | 523.91 |                   17 | succeeded |
+| Viento vertical, pequeño   |   0.8 |          136 |           270.35 | 503.04 |                    4 | succeeded |
 
 Cada escenario realizó **128 evaluaciones gruesas**, **4 evaluaciones nuevas de refinamiento** y entre **4 y 21 verificaciones completas**. Los tiempos de exploración gruesa fueron de **226.41 a 310.72 ms** y los de refinamiento de **7.38 a 7.93 ms**. Tasa de éxito en este conjunto: **6/6 (100 %)**. No implica garantía de éxito en otros escenarios.
 
