@@ -9,7 +9,10 @@ import { Activity, Clock3, Gauge, Info, Mountain, Orbit, Wind } from 'lucide-rea
 import { useMemo, useState } from 'react';
 import { GeometryCanvas } from '../features/workbench/GeometryCanvas';
 import { InverseSolverPanel, isConfirmedHit } from '../features/workbench/InverseSolverPanel';
-import { buildSimulationInput, solverScenarioSignature } from '../features/workbench/simulation-input';
+import {
+  buildSimulationInput,
+  solverScenarioSignature,
+} from '../features/workbench/simulation-input';
 import { useLabStore } from '../store/lab-store';
 
 export default function WorkbenchPage() {
@@ -37,22 +40,30 @@ export default function WorkbenchPage() {
     candidate: SolverCandidate;
     comparison: SolverCandidate | null;
   } | null>(null);
-  const currentPreview = inversePreview?.workspaceId === workspace.id &&
-    inversePreview.signature === scenarioSignature ? inversePreview : null;
+  const currentPreview =
+    inversePreview?.workspaceId === workspace.id && inversePreview.signature === scenarioSignature
+      ? inversePreview
+      : null;
   const inverseResult = useMemo(
-    () => currentPreview ? simulateProjectile({
-      ...primaryInput,
-      launchAngleDegrees: currentPreview.candidate.angleDegrees,
-      power: currentPreview.candidate.power,
-    }) : null,
+    () =>
+      currentPreview
+        ? simulateProjectile({
+            ...primaryInput,
+            launchAngleDegrees: currentPreview.candidate.angleDegrees,
+            power: currentPreview.candidate.power,
+          })
+        : null,
     [currentPreview, primaryInput],
   );
   const inverseComparisonResult = useMemo(
-    () => currentPreview?.comparison ? simulateProjectile({
-      ...primaryInput,
-      launchAngleDegrees: currentPreview.comparison.angleDegrees,
-      power: currentPreview.comparison.power,
-    }) : null,
+    () =>
+      currentPreview?.comparison
+        ? simulateProjectile({
+            ...primaryInput,
+            launchAngleDegrees: currentPreview.comparison.angleDegrees,
+            power: currentPreview.comparison.power,
+          })
+        : null,
     [currentPreview, primaryInput],
   );
   const targetId = primaryInput.collisions.targets[0]?.id ?? '';
@@ -60,10 +71,16 @@ export default function WorkbenchPage() {
   function applyVerified(candidate: SolverCandidate) {
     if (!currentPreview || !isConfirmedHit(candidate, targetId)) return;
     const checked = simulateProjectile({
-      ...primaryInput, launchAngleDegrees: candidate.angleDegrees, power: candidate.power,
+      ...primaryInput,
+      launchAngleDegrees: candidate.angleDegrees,
+      power: candidate.power,
     });
-    if (checked.terminationReason !== 'target-impact' ||
-      checked.impact?.kind !== 'target' || checked.impact.targetId !== targetId) return;
+    if (
+      checked.terminationReason !== 'target-impact' ||
+      checked.impact?.kind !== 'target' ||
+      checked.impact.targetId !== targetId
+    )
+      return;
     updateActiveSimulation({ angleDegrees: candidate.angleDegrees, power: candidate.power });
   }
   const comparisonInput = useMemo(() => {
@@ -166,7 +183,9 @@ export default function WorkbenchPage() {
               <span className="primary-line">PRINCIPAL</span>
               {comparisonResult ? <span className="comparison-line">COMPARACION</span> : null}
               {currentPreview ? <span className="inverse-line">INVERSA</span> : null}
-              {inverseComparisonResult ? <span className="inverse-high-line">ARCO ALTO</span> : null}
+              {inverseComparisonResult ? (
+                <span className="inverse-high-line">ARCO ALTO</span>
+              ) : null}
               <span className="coordinate-readout">
                 ΔX {delta.x.toFixed(1)} · ΔY {delta.y.toFixed(1)}
               </span>
@@ -184,10 +203,20 @@ export default function WorkbenchPage() {
             comparisonApex={comparisonResult?.apexPoint.position ?? null}
             targetRadius={targetRadius}
             inversePath={inverseResult?.trajectory.map((point) => point.position) ?? []}
-            inverseImpact={inverseResult?.impact?.point ?? currentPreview?.candidate.closestApproach?.point ?? null}
+            inverseImpact={
+              inverseResult?.impact?.point ??
+              currentPreview?.candidate.closestApproach?.point ??
+              null
+            }
             inverseApex={inverseResult?.apexPoint.position ?? null}
-            inverseComparisonPath={inverseComparisonResult?.trajectory.map((point) => point.position) ?? []}
-            inverseComparisonImpact={inverseComparisonResult?.impact?.point ?? currentPreview?.comparison?.closestApproach?.point ?? null}
+            inverseComparisonPath={
+              inverseComparisonResult?.trajectory.map((point) => point.position) ?? []
+            }
+            inverseComparisonImpact={
+              inverseComparisonResult?.impact?.point ??
+              currentPreview?.comparison?.closestApproach?.point ??
+              null
+            }
             inverseComparisonApex={inverseComparisonResult?.apexPoint.position ?? null}
             onPointChange={updateActivePoint}
           />
@@ -223,10 +252,18 @@ export default function WorkbenchPage() {
         key={workspace.id + ':' + scenarioSignature}
         simulation={primaryInput}
         previewVisible={currentPreview !== null}
-        onPreview={(candidate, comparison) => setInversePreview(
-          candidate ? { workspaceId: workspace.id, signature: scenarioSignature,
-            candidate, comparison: comparison ?? null } : null
-        )}
+        onPreview={(candidate, comparison) =>
+          setInversePreview(
+            candidate
+              ? {
+                  workspaceId: workspace.id,
+                  signature: scenarioSignature,
+                  candidate,
+                  comparison: comparison ?? null,
+                }
+              : null,
+          )
+        }
         onApply={applyVerified}
       />
     </div>

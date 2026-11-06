@@ -11,7 +11,8 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'pnpm --filter @dragonballistics/web exec vite build --mode worker-e2e && pnpm preview --host 127.0.0.1',
+    command:
+      'pnpm --filter @dragonballistics/web exec vite build --mode worker-e2e && pnpm preview --host 127.0.0.1',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

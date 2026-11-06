@@ -112,8 +112,14 @@ export function parseWorkerRequest(value: unknown): SolverWorkerRequest | null {
 }
 
 const TERMINATIONS = [
-  'ground-impact', 'terrain-impact', 'target-impact', 'out-of-bounds',
-  'maximum-time', 'maximum-iterations', 'invalid-numeric-state', 'invalid-input',
+  'ground-impact',
+  'terrain-impact',
+  'target-impact',
+  'out-of-bounds',
+  'maximum-time',
+  'maximum-iterations',
+  'invalid-numeric-state',
+  'invalid-input',
 ];
 const STATUSES = ['succeeded', 'no-solution', 'invalid-input', 'budget-exhausted', 'cancelled'];
 const STOP_REASONS = ['completed', 'evaluation-limit', 'time-limit', 'cancelled'];
@@ -124,83 +130,144 @@ function nonnegativeInteger(value: unknown): value is number {
   return nonnegative(value) && Number.isInteger(value);
 }
 function validImpact(value: unknown): boolean {
-  return value === null || (
-    record(value) && ['ground', 'terrain', 'target'].includes(String(value.kind)) &&
-    vector(value.point) && vector(value.normal) && nonnegative(value.elapsedSeconds) &&
-    (value.kind !== 'target' ||
-      (typeof value.targetId === 'string' && value.targetId.length > 0)) &&
-    (value.terrainSegmentIndex === undefined || nonnegativeInteger(value.terrainSegmentIndex))
+  return (
+    value === null ||
+    (record(value) &&
+      ['ground', 'terrain', 'target'].includes(String(value.kind)) &&
+      vector(value.point) &&
+      vector(value.normal) &&
+      nonnegative(value.elapsedSeconds) &&
+      (value.kind !== 'target' ||
+        (typeof value.targetId === 'string' && value.targetId.length > 0)) &&
+      (value.terrainSegmentIndex === undefined || nonnegativeInteger(value.terrainSegmentIndex)))
   );
 }
 function validClosest(value: unknown): boolean {
-  return value === null || (
-    record(value) && typeof value.targetId === 'string' && value.targetId.length > 0 &&
-    vector(value.point) && nonnegative(value.elapsedSeconds) &&
-    nonnegative(value.centerDistance) && nonnegative(value.surfaceDistance) &&
-    nonnegative(value.spatialTolerance)
+  return (
+    value === null ||
+    (record(value) &&
+      typeof value.targetId === 'string' &&
+      value.targetId.length > 0 &&
+      vector(value.point) &&
+      nonnegative(value.elapsedSeconds) &&
+      nonnegative(value.centerDistance) &&
+      nonnegative(value.surfaceDistance) &&
+      nonnegative(value.spatialTolerance))
   );
 }
 function validCandidate(value: unknown): boolean {
   if (!record(value)) return false;
-  if (![value.angleDegrees, value.power, value.score, value.missDistance,
-    value.flightTimeSeconds, value.maximumHeight].every(finite) ||
-    !nonnegative(value.score) || !nonnegative(value.missDistance) ||
+  if (
+    ![
+      value.angleDegrees,
+      value.power,
+      value.score,
+      value.missDistance,
+      value.flightTimeSeconds,
+      value.maximumHeight,
+    ].every(finite) ||
+    !nonnegative(value.score) ||
+    !nonnegative(value.missDistance) ||
     !nonnegative(value.flightTimeSeconds) ||
     !['low', 'high', 'undetermined'].includes(String(value.arc)) ||
     !TERMINATIONS.includes(String(value.terminationReason)) ||
     typeof value.hit !== 'boolean' ||
     typeof value.verifiedWithFullSimulation !== 'boolean' ||
-    !validImpact(value.impact) || !validClosest(value.closestApproach)) return false;
+    !validImpact(value.impact) ||
+    !validClosest(value.closestApproach)
+  )
+    return false;
   if (value.hit) {
-    if (!value.verifiedWithFullSimulation || value.terminationReason !== 'target-impact' ||
-      !record(value.impact) || value.impact.kind !== 'target' ||
-      typeof value.impact.targetId !== 'string' || value.impact.targetId.length === 0) return false;
+    if (
+      !value.verifiedWithFullSimulation ||
+      value.terminationReason !== 'target-impact' ||
+      !record(value.impact) ||
+      value.impact.kind !== 'target' ||
+      typeof value.impact.targetId !== 'string' ||
+      value.impact.targetId.length === 0
+    )
+      return false;
   }
   return true;
 }
 function validResult(value: unknown): value is SolverResult {
-  if (!record(value) || !STATUSES.includes(String(value.status)) ||
-    !Array.isArray(value.solutions) || value.solutions.length > 16 ||
+  if (
+    !record(value) ||
+    !STATUSES.includes(String(value.status)) ||
+    !Array.isArray(value.solutions) ||
+    value.solutions.length > 16 ||
     !value.solutions.every(validCandidate) ||
-    ![value.evaluatedCandidates, value.coarseEvaluations,
-      value.refinementEvaluations, value.verificationEvaluations, value.hitCount]
-      .every(nonnegativeInteger) ||
-    ![value.elapsedMilliseconds, value.coarseMilliseconds, value.refinementMilliseconds]
-      .every(nonnegative) ||
+    ![
+      value.evaluatedCandidates,
+      value.coarseEvaluations,
+      value.refinementEvaluations,
+      value.verificationEvaluations,
+      value.hitCount,
+    ].every(nonnegativeInteger) ||
+    ![value.elapsedMilliseconds, value.coarseMilliseconds, value.refinementMilliseconds].every(
+      nonnegative,
+    ) ||
     !STOP_REASONS.includes(String(value.stopReason)) ||
     ![null, 'evaluations', 'time'].includes(value.exhaustedBudget as string | null) ||
     !Array.isArray(value.messages) ||
-    !value.messages.every((message: unknown) =>
-      record(message) && typeof message.code === 'string' &&
-      typeof message.message === 'string')) return false;
+    !value.messages.every(
+      (message: unknown) =>
+        record(message) && typeof message.code === 'string' && typeof message.message === 'string',
+    )
+  )
+    return false;
 
-  if (value.evaluatedCandidates !==
+  if (
+    value.evaluatedCandidates !==
       value.coarseEvaluations + value.refinementEvaluations + value.verificationEvaluations ||
     value.hitCount > value.verificationEvaluations ||
-    value.solutions.filter((candidate: unknown) => record(candidate) && candidate.hit).length > value.hitCount) return false;
+    value.solutions.filter((candidate: unknown) => record(candidate) && candidate.hit).length >
+      value.hitCount
+  )
+    return false;
   if (value.status === 'succeeded' && value.hitCount === 0) return false;
   if (value.status === 'no-solution' && value.hitCount !== 0) return false;
   if (value.status === 'invalid-input' && value.evaluatedCandidates !== 0) return false;
   if (value.status === 'cancelled' && value.stopReason !== 'cancelled') return false;
-  if (value.status === 'budget-exhausted' &&
-    !(value.stopReason === 'evaluation-limit' || value.stopReason === 'time-limit')) return false;
+  if (
+    value.status === 'budget-exhausted' &&
+    !(value.stopReason === 'evaluation-limit' || value.stopReason === 'time-limit')
+  )
+    return false;
   return true;
 }
 export function parseWorkerResponse(value: unknown): SolverWorkerResponse | null {
-  if (!record(value) || typeof value.jobId !== 'string' ||
-    value.jobId.length < 1 || value.jobId.length > 128) return null;
-  if (value.type === 'ERROR' && typeof value.code === 'string' &&
-    value.code.length > 0 && typeof value.message === 'string') {
+  if (
+    !record(value) ||
+    typeof value.jobId !== 'string' ||
+    value.jobId.length < 1 ||
+    value.jobId.length > 128
+  )
+    return null;
+  if (
+    value.type === 'ERROR' &&
+    typeof value.code === 'string' &&
+    value.code.length > 0 &&
+    typeof value.message === 'string'
+  ) {
     return { type: 'ERROR', jobId: value.jobId, code: value.code, message: value.message };
   }
   if (value.type === 'PROGRESS' && record(value.progress)) {
     const p = value.progress;
-    if (['coarse', 'refinement', 'complete'].includes(String(p.phase)) &&
-      [p.evaluatedCandidates, p.coarseEvaluations, p.refinementEvaluations,
-        p.verificationEvaluations, p.hitCount].every(nonnegativeInteger) &&
+    if (
+      ['coarse', 'refinement', 'complete'].includes(String(p.phase)) &&
+      [
+        p.evaluatedCandidates,
+        p.coarseEvaluations,
+        p.refinementEvaluations,
+        p.verificationEvaluations,
+        p.hitCount,
+      ].every(nonnegativeInteger) &&
       nonnegative(p.elapsedMilliseconds) &&
-      p.evaluatedCandidates === p.coarseEvaluations + p.refinementEvaluations + p.verificationEvaluations &&
-      p.hitCount <= p.verificationEvaluations) {
+      p.evaluatedCandidates ===
+        p.coarseEvaluations + p.refinementEvaluations + p.verificationEvaluations &&
+      p.hitCount <= p.verificationEvaluations
+    ) {
       return { type: 'PROGRESS', jobId: value.jobId, progress: p as unknown as SolverProgress };
     }
   }

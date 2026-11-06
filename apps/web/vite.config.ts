@@ -9,12 +9,15 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       // The test fixture is bundled only for the dedicated Playwright build.
       // Normal production builds do not expose an extra diagnostic HTML page.
-      input: mode === 'worker-e2e'
-        ? {
-            app: fileURLToPath(new URL('./index.html', import.meta.url)),
-            solverWorkerHarness: fileURLToPath(new URL('./solver-worker-harness.html', import.meta.url)),
-          }
-        : fileURLToPath(new URL('./index.html', import.meta.url)),
+      input:
+        mode === 'worker-e2e'
+          ? {
+              app: fileURLToPath(new URL('./index.html', import.meta.url)),
+              solverWorkerHarness: fileURLToPath(
+                new URL('./solver-worker-harness.html', import.meta.url),
+              ),
+            }
+          : fileURLToPath(new URL('./index.html', import.meta.url)),
     },
   },
   server: {

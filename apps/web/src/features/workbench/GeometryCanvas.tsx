@@ -160,7 +160,8 @@ export function GeometryCanvas({
       drawApex(context, worldToScreen(comparisonApex, transform), '#a78bfa');
     }
     if (inverseApex) drawApex(context, worldToScreen(inverseApex, transform), '#fb7185');
-    if (inverseComparisonApex) drawApex(context, worldToScreen(inverseComparisonApex, transform), '#facc15');
+    if (inverseComparisonApex)
+      drawApex(context, worldToScreen(inverseComparisonApex, transform), '#facc15');
     if (primaryImpact) {
       drawImpact(context, worldToScreen(primaryImpact, transform), '#3dd6d0');
     }
@@ -168,7 +169,8 @@ export function GeometryCanvas({
       drawImpact(context, worldToScreen(comparisonImpact, transform), '#a78bfa');
     }
     if (inverseImpact) drawImpact(context, worldToScreen(inverseImpact, transform), '#fb7185');
-    if (inverseComparisonImpact) drawImpact(context, worldToScreen(inverseComparisonImpact, transform), '#facc15');
+    if (inverseComparisonImpact)
+      drawImpact(context, worldToScreen(inverseComparisonImpact, transform), '#facc15');
 
     drawPoint(context, launchScreen, '#3dd6d0', 'LANZAMIENTO');
     drawPoint(context, targetScreen, '#f4b860', 'OBJETIVO');
