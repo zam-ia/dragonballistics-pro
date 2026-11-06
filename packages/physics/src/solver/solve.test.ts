@@ -146,7 +146,7 @@ describe('deterministic inverse projectile solver', () => {
 
   it('stops at the time limit using an injected monotonically advancing clock', () => {
     let clock = 0;
-    const result = solveProjectile(request(), {
+    const result = solveProjectile(request(scenario(), { budgets: { maximumEvaluations: 320, maximumWallTimeMs: 80, coarseFraction: 0.45, refinementRounds: 6 } }), {
       now: () => { clock += 10; return clock; },
     });
     expect(result.status).toBe('budget-exhausted');
