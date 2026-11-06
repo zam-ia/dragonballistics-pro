@@ -2,6 +2,16 @@
 
 All notable changes to DragonBallistics Pro are recorded here.
 
+## Unreleased
+
+### Changed
+
+- Reused a quartic Bernstein representation of each integrated step for collision and proximity
+  queries while retaining exact integrated impact state.
+- Precomputed force-field constants and removed redundant RK4 derivative allocations.
+- Added instrumented legacy/optimized A/B benchmarks with alternating rounds, operation counters and
+  regression coverage for curved geometry.
+
 ## 0.2.0 - 2026-11-05
 
 ### Added

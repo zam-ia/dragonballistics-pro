@@ -36,7 +36,12 @@ ranking no necesita.
 - La UI permanece responsiva aunque el job tarde segundos.
 - Los resultados parciales y presupuestos agotados se vuelven estados explicitos.
 
-Fase 3A valido la paridad del primer incremento. El benchmark logro una reduccion de payload de
-`98.41 %` a `99.92 %`, pero solo `1.059x` y `1.042x` de mejora temporal. El perfil identifica como
-costo dominante las integraciones parciales de la deteccion curva, no la retencion de puntos. El
-Worker y la busqueda continuan pendientes y requieren una decision separada en Fase 3B.
+Fase 3A valido la paridad del primer incremento. Fase 3A.1 confirmo que el costo dominante eran las
+integraciones parciales de la deteccion curva, no la retencion de puntos. Se acepta reconstruir la
+posicion de cada paso como curva de Bernstein de grado cuatro porque es algebraicamente equivalente
+para los campos soportados y permite un limite geometrico conservador. Las pruebas A/B mantienen la
+politica anterior como oraculo de regresion.
+
+El resultado conserva una reduccion de payload de `98.41 %` a `99.92 %` y alcanza 87.37
+evaluaciones/s default y 35.13 con `dt=0.001` en la pasada standalone conservadora. El Worker y la
+busqueda continuan pendientes y requieren una decision separada en Fase 3B.

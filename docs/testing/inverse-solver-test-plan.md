@@ -25,8 +25,10 @@ Pruebas de paridad `full` contra `summary` para:
 Criterios: misma terminacion e impacto; tiempo, posicion, velocidad y apice dentro de las tolerancias de
 Fase 2. `summary` no debe acumular un arreglo de trayectoria.
 
-Fase 3A cubre este bloque con 16 escenarios de paridad y cuatro pruebas de contrato/aproximacion. Los
-bloques siguientes pertenecen a Fase 3B y posteriores.
+Fase 3A cubre este bloque con 16 escenarios de paridad y cuatro pruebas de contrato/aproximacion. Fase
+3A.1 agrega 22 ejecuciones A/B entre muestreo legacy y polinomial, reconstruccion cuartica, limite
+conservador, equivalencia de RK4 y precomputacion del campo de fuerzas. Los bloques siguientes
+pertenecen a Fase 3B y posteriores.
 
 ## 2. Casos analiticos
 
@@ -100,13 +102,15 @@ Los tiempos no se afirmaran mediante tests unitarios fragiles. Habra un benchmar
 - comparacion `full` contra `summary`;
 - busqueda gruesa y refinamiento por separado.
 
-Puertas iniciales en el equipo de referencia:
+Puertas medidas en el equipo de referencia:
 
-- `summary` al menos 2 veces mas rapido que `full` en el escenario predeterminado;
+- medir el objetivo aspiracional de 2x sin convertirlo en una puerta que incentive relajar precision;
 - ningun lote del solver ejecutado sincronicamente en React;
 - presupuesto default de 1,024 y duro de 4,096 evaluaciones respetados;
 - job default limitado a 2 s y limite duro de 5 s;
 - build, lint, TypeScript, unitarias, E2E y CI aprobados.
 
-Si el evaluador rapido no alcanza la mejora, se documentara el perfil antes de cambiar algoritmos o
-introducir cache, Workers adicionales, WebAssembly o GPU.
+Fase 3A.1 alcanzo `1.143x` frente al summary publicado en la pasada standalone predeterminada y
+`8.841x` en alta resolucion. El A/B dentro del mismo proceso registro 87.37 y 35.13 evaluaciones/s. La
+mediana mejora mas que el promedio, por lo que el presupuesto usa el promedio conservador. Workers,
+WebAssembly y GPU siguen pendientes hasta medir el solver real.

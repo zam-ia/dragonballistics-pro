@@ -1,6 +1,6 @@
 # Diseño del solucionador inverso
 
-Estado: propuesta tecnica previa a implementacion
+Estado: evaluador summary optimizado; busqueda pendiente
 Fase: 3
 Fecha: 2026-11-06
 
@@ -44,9 +44,9 @@ ranking, deduplicacion y SolverResult tipado
 
 ## Modo de evaluacion rapida
 
-El benchmark del 2026-11-06 muestra que la simulacion predeterminada completa conserva 609 puntos y
-tarda aproximadamente 20.051 ms por evaluacion en el equipo de referencia. Una busqueda de cientos de
-candidatos no debe crear todas esas colecciones.
+El benchmark optimizado del 2026-11-06 muestra que la simulacion predeterminada completa conserva 609
+puntos y que `summary` no conserva ninguno. Una busqueda de cientos de candidatos no debe crear las
+colecciones completas.
 
 Se propone extraer el bucle actual a un nucleo compartido con dos politicas de captura:
 
@@ -208,23 +208,27 @@ Plan:
 - el solver puro vive en `packages/physics/src/solver/`;
 - un Worker de `apps/web` recibe estructuras serializables con `jobId`;
 - emite progreso como maximo cada 50 ms o cada 16 evaluaciones;
-- procesa lotes pequenos y comprueba cancelacion entre ellos, sin bloquear hasta terminar la busqueda;
+- adapta el lote al costo medido y comprueba cancelacion entre evaluaciones/lotes, sin bloquear hasta
+  terminar la busqueda; con P95 conservador cabe una evaluacion default en 25 ms y una de alta
+  resolucion ya puede exceder ese quantum;
 - la UI nunca ejecuta el lote sincrono en el hilo principal;
 - la trayectoria completa se recalcula solo para las soluciones finales seleccionadas.
 
-Fase 3A implemento y midio el evaluador `summary`:
+Fase 3A implemento el evaluador `summary`; Fase 3A.1 optimizo su nucleo compartido:
 
 - paridad funcional con `full` en 16 escenarios fisicos y de error;
 - cero puntos de trayectoria acumulados;
 - reduccion del payload serializado de `98.41 %` a `99.92 %`;
-- mejora temporal de `1.059x` en default y `1.042x` con `dt=0.001`;
-- costo dominante perfilado en RK4 parcial, aplanamiento y refinamiento de colisiones.
+- `87.37` evaluaciones/s default y `35.13` evaluaciones/s con `dt=0.001` en la pasada standalone
+  conservadora;
+- mejora frente al benchmark publicado de `1.143x` y `8.841x` respectivamente;
+- reduccion de 95.24 % en integraciones parciales mediante una representacion cuartica equivalente.
 
-El objetivo de 2x no se alcanzo. No se relajan tolerancias ni se bifurca el motor para forzarlo. A la
-tasa observada, 2 s permiten aproximadamente 153 evaluaciones default o 7 de alta resolucion antes de
-agregar overhead del solver. El diseno conserva los limites de 1,024/2 s y 4,096/5 s, deteniendose por
-el primero que se cumpla. Los resultados completos estan en
-`docs/reports/physics-summary-benchmark-2026-11-06.md`.
+No se relajaron tolerancias ni se bifurco el motor. A la tasa conservadora, 2 s permiten teoricamente
+unas 174 evaluaciones default o 70 de alta resolucion antes del overhead del solver. Como presupuesto
+de planificacion conservador se recomiendan inicialmente 128 o 48, sin cambiar los topes contractuales de
+1,024/2 s y 4,096/5 s. El trabajo se detiene por el primer limite alcanzado. Los resultados completos
+estan en `docs/reports/physics-optimization-2026-11-06.md`.
 
 ## Incrementos de implementacion
 

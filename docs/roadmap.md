@@ -31,9 +31,10 @@ Estados: Pendiente · En desarrollo · En pruebas · Completado · Bloqueado.
 
 ## Siguiente incremento autorizado
 
-Fase 3A implementa el nucleo de evaluacion `summary`, sus pruebas de paridad y benchmark frente al modo
-`full`. La busqueda, Worker e interfaz permanecen fuera de este incremento. Fase 3B no se inicia sin
-revision tecnica explicita de los resultados de rendimiento.
+Fase 3A implemento el nucleo de evaluacion `summary`. Fase 3A.1 optimizo el nucleo compartido mediante
+reutilizacion cuartica segura, agrego perfilado y benchmark A/B y mantuvo la paridad fisica. La
+busqueda, Worker e interfaz permanecen fuera de este incremento. Fase 3B no se inicia sin revision
+tecnica explicita de estos resultados.
 
 Documentos de diseño:
 
@@ -41,6 +42,7 @@ Documentos de diseño:
 - `docs/testing/inverse-solver-test-plan.md`;
 - `docs/decisions/0004-summary-evaluation-and-worker-solver.md`;
 - `docs/reports/physics-summary-benchmark-2026-11-06.md`.
+- `docs/reports/physics-optimization-2026-11-06.md`.
 
 ## Verificacion de Fase 1
 

@@ -1,8 +1,8 @@
 # Especificacion del modelo fisico
 
-Estado: implementado y en validacion para Fase 2
+Estado: implementado y optimizado en Fase 3A.1
 Version del motor: 0.2.0
-Fecha: 2026-11-05
+Fecha: 2026-11-06
 
 ## Alcance y limite
 
@@ -93,9 +93,16 @@ documentado. No se mezclan silenciosamente velocidad de aire y aceleracion direc
 ## Colisiones continuas
 
 Cada paso evalua la trayectoria producida por el mismo integrador, no solamente la cuerda entre sus
-extremos. El detector construye una polilinea adaptativa en orden temporal y compara las posiciones en
-un cuarto, la mitad y tres cuartos de cada intervalo con su cuerda. Subdivide cuando la desviacion
-supera la tolerancia o cuando el intervalo ocupa mas de `1/16` del paso.
+extremos. Para los modelos soportados, la posicion de un paso RK4 es un polinomio de grado maximo
+cuatro: la aceleracion es constante o lineal en velocidad. El detector integra las posiciones en un
+cuarto, la mitad y tres cuartos, reconstruye la curva de Bernstein equivalente y la reutiliza para las
+consultas geometricas. Euler semimplicito queda contenido como un polinomio de grado menor.
+
+La envolvente convexa de los puntos de control proporciona un limite conservador de la desviacion
+contra la cuerda. Un intervalo se acepta solo si ese limite demuestra que toda la curva esta dentro de
+la tolerancia. Si no puede demostrarlo, subdivide. Para hojas menores o iguales a `1/16` conserva la
+comprobacion adaptativa historica. El modo legacy queda disponible solo para perfilado y pruebas A/B;
+las API publicas usan la politica polinomial segura.
 
 Sobre cada intervalo aceptado se prueban:
 
@@ -118,7 +125,8 @@ Contrato numerico:
 - profundidad maxima: 16 subdivisiones.
 
 Una separacion menor que la tolerancia espacial se considera contacto numerico. El limite de
-profundidad evita trabajo no acotado con entradas extremas.
+profundidad evita trabajo no acotado con entradas extremas. La reconstruccion no usa la cuerda como
+descarte y conserva tangencias, cruces curvos de limites, objetivos pequenos y terreno segmentado.
 
 Si el lanzamiento comienza sobre un segmento de terreno, el motor compara la velocidad con la normal
 ascendente del segmento. Una velocidad normal menor o igual que `1e-9 u/s` registra impacto en `t=0`;
@@ -158,7 +166,9 @@ diagnosticos y la mejor aproximacion al objetivo seleccionado. Los impactos cons
 temporal de colisiones. Para trayectorias que no impactan, la aproximacion minima se calcula sobre cada
 segmento de la misma polilinea adaptativa; `spatialTolerance` declara la desviacion geometrica maxima
 permitida por ese aplanamiento. El tiempo de una aproximacion sin impacto se interpola dentro de la
-hoja y no tiene la tolerancia temporal mas estricta reservada para impactos.
+hoja y no tiene la tolerancia temporal mas estricta reservada para impactos. Fase 3A.1 reutiliza la
+misma curva polinomial en full y summary; el estado de impacto se integra a la fraccion refinada para
+conservar posicion, velocidad y tiempo coherentes.
 
 ## Validacion numerica reproducible
 
