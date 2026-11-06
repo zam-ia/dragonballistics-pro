@@ -172,6 +172,7 @@ describe('solver Worker controller with deterministic simulated Worker', () => {
           ...progress,
           phase,
           refinementEvaluations: phase === 'refinement' ? 4 : 0,
+          evaluatedCandidates: phase === 'refinement' ? 20 : 16,
         },
       });
       expect(controller.getSnapshot().progress?.phase).toBe(phase);
