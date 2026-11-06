@@ -257,7 +257,7 @@ function classifyArcs(entries: SearchEntry[], input: SolverInput): void {
     const last = basins[basins.length - 1];
     if (
       !last ||
-      hit.candidate.angleDegrees - last[last.length - 1].candidate.angleDegrees > angleGap
+      hit.candidate.angleDegrees - last[last.length - 1]!.candidate.angleDegrees > angleGap
     ) {
       basins.push([hit]);
     } else {
@@ -269,9 +269,9 @@ function classifyArcs(entries: SearchEntry[], input: SolverInput): void {
     basin.reduce((sum, e) => sum + e.candidate.maximumHeight, 0) / basin.length;
   const byHeight = [...basins].sort((a, b) => apexFor(a) - apexFor(b));
   const minimumSeparation = Math.max(target.radius * 2, 0.5);
-  if (apexFor(byHeight[byHeight.length - 1]) - apexFor(byHeight[0]) <= minimumSeparation) return;
-  for (const entry of byHeight[0]) entry.candidate.arc = 'low';
-  for (const entry of byHeight[byHeight.length - 1]) entry.candidate.arc = 'high';
+  if (apexFor(byHeight[byHeight.length - 1]!) - apexFor(byHeight[0]!) <= minimumSeparation) return;
+  for (const entry of byHeight[0]!) entry.candidate.arc = 'low';
+  for (const entry of byHeight[byHeight.length - 1]!) entry.candidate.arc = 'high';
 }
 
 /**
@@ -449,10 +449,10 @@ export function solveProjectile(
   const hitsToVerify = provisional
     .filter((e) => e.provisionalHit)
     .sort((a, b) => a.candidate.angleDegrees - b.candidate.angleDegrees);
-  const verificationOrder =
+  const verificationOrder: SearchEntry[] =
     hitsToVerify.length < 2
       ? hitsToVerify
-      : [hitsToVerify[0], hitsToVerify[hitsToVerify.length - 1], ...hitsToVerify.slice(1, -1)];
+      : [hitsToVerify[0]!, hitsToVerify[hitsToVerify.length - 1]!, ...hitsToVerify.slice(1, -1)];
   for (const entry of verificationOrder) {
     if (!allowed()) break;
     const full = simulateProjectile({
@@ -491,11 +491,13 @@ export function solveProjectile(
   }
   phase = 'complete';
   notify(true);
+  // The stop callback mutates this value across nested functions; preserve the complete union.
+  const finalStopReason = stopReason as SolverStopReason;
   const exhaustedBudget =
-    stopReason === 'time-limit' ? 'time' : stopReason === 'evaluation-limit' ? 'evaluations' : null;
+    finalStopReason === 'time-limit' ? 'time' : finalStopReason === 'evaluation-limit' ? 'evaluations' : null;
   const hitCount = provisional.filter((e) => e.candidate.hit).length;
   const status =
-    stopReason === 'cancelled'
+    finalStopReason === 'cancelled'
       ? 'cancelled'
       : exhaustedBudget
         ? 'budget-exhausted'
@@ -503,13 +505,13 @@ export function solveProjectile(
           ? 'succeeded'
           : 'no-solution';
   const messages: SimulationMessage[] = [];
-  if (stopReason !== 'completed') {
+  if (finalStopReason !== 'completed') {
     messages.push({
-      code: stopReason,
+      code: finalStopReason,
       message:
-        stopReason === 'cancelled'
+        finalStopReason === 'cancelled'
           ? 'Busqueda cancelada.'
-          : stopReason === 'time-limit'
+          : finalStopReason === 'time-limit'
             ? 'Limite temporal alcanzado.'
             : 'Limite de evaluaciones alcanzado.',
     });
@@ -532,7 +534,7 @@ export function solveProjectile(
     coarseMilliseconds,
     refinementMilliseconds,
     exhaustedBudget,
-    stopReason,
+    stopReason: finalStopReason,
     messages,
   };
 }
