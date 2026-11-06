@@ -41,25 +41,27 @@ confirmaciones completas y tiempo transcurrido. No presenta impactos provisional
 
 ## Pruebas y mediciones del navegador
 
-Primera ejecucion completa verificada:
-https://github.com/zam-ia/dragonballistics-pro/actions/runs/42308147448
+Ejecuciones completas verificadas:
+
+- https://github.com/zam-ia/dragonballistics-pro/actions/runs/42308147448
+- https://github.com/zam-ia/dragonballistics-pro/actions/runs/42308538695
 
 - Prettier, ESLint, TypeScript y build correctos.
-- Vitest: 124/124 pruebas en 17 archivos.
+- Vitest: 125/125 pruebas en 17 archivos (ultima ejecucion).
 - Playwright: 6/6 escenarios, incluidos tres con Worker real.
 - Benchmark numerico 3B: 6/6 escenarios con al menos un impacto.
 
 Mediciones instrumentadas en Playwright Chromium, runner GitHub Linux:
 
-- Tiempo de creacion del Worker: 1 ms (precision del reloj de Chromium).
-- Primer progreso: 85 ms desde el inicio del controlador.
-- Tiempo total de una busqueda real: 339.4 ms.
+- Tiempo de creacion del Worker: 1-1.1 ms (precision del reloj de Chromium).
+- Primer progreso: 85 y 131 ms desde el inicio del controlador.
+- Tiempo total de una busqueda real: 339.4 y 342.5 ms.
 - Cuatro resultados verificados en esa busqueda.
-- Actividad del temporizador principal: 67 ticks durante esa busqueda.
+- Actividad del temporizador principal: 67-68 ticks durante esas busquedas.
 - Sobrecarga de llamada a `postMessage`: 0 ms redondeados (no es latencia de entrega).
-- Coste local de `cancel()`: aproximadamente 0.1 ms.
-- Coste local de cancelar y arrancar otro trabajo: aproximadamente 0.4 ms.
-- Durante la prueba de alta resolucion y reemplazo: 162 ticks del temporizador principal.
+- Coste local de `cancel()`: aproximadamente 0-0.1 ms.
+- Coste local de cancelar y arrancar otro trabajo: aproximadamente 0.2-0.4 ms.
+- Durante alta resolucion y reemplazo: 143-162 ticks del temporizador principal.
 
 Estas cifras son observaciones de una ejecucion y pueden variar con el dispositivo.
 `terminate()` no ofrece acuse sincronico del hilo interno: la latencia medida es la de la
