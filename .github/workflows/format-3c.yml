@@ -1,0 +1,34 @@
+name: Format Phase 3C
+on:
+  push:
+    branches:
+      - feature/inverse-solver
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/inverse-solver
+          persist-credentials: true
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply pinned Prettier
+        run: pnpm exec prettier --write apps/web/src/workers apps/web/vite.config.ts apps/web/solver-worker-harness.html packages/physics/src/solver/solve.ts packages/physics/src/solver/solve.test.ts tests/end-to-end/solver-worker.spec.ts docs/decisions/0005-worker-isolation-and-hard-cancellation.md docs/testing/inverse-solver-test-plan.md docs/roadmap.md CHANGELOG.md
+      - name: Commit formatting only
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add apps/web/src/workers apps/web/vite.config.ts apps/web/solver-worker-harness.html packages/physics/src/solver/solve.ts packages/physics/src/solver/solve.test.ts tests/end-to-end/solver-worker.spec.ts docs/decisions/0005-worker-isolation-and-hard-cancellation.md docs/testing/inverse-solver-test-plan.md docs/roadmap.md CHANGELOG.md
+            git commit -m "style(worker): apply repository Prettier to Phase 3C"
+            git push origin HEAD:feature/inverse-solver
+          fi
