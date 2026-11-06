@@ -6,6 +6,11 @@ All notable changes to DragonBallistics Pro are recorded here.
 
 ### Added
 
+- Phase 3D: responsive inverse solver panel in the existing workbench, configurable limits, real progress, verified candidates, and explicit apply action.
+- On-demand inverse Canvas trajectory and low/high arc comparison, preserving the original physics controls and their persistence.
+- Scenario signatures isolate four workspaces, prevent stale overlays and terminate obsolete Workers.
+- Deep Worker result validation, production-only application entrypoint, and separate Playwright Worker fixture mode.
+- Unit and Chromium acceptance tests with downloadable desktop/mobile screenshots.
 - Phase 3C typed Web Worker protocol, reusable non-React search controller, real browser integration fixture, and forced cancellation with job isolation.
 - Browser and unit coverage for Worker start, progress, verified results, replacement, failure recovery and cancellation.
 
