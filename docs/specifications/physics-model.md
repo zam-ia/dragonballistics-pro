@@ -1,43 +1,44 @@
 # Especificacion del modelo fisico
 
-Estado: diseño para Fase 2; no implementado en Fase 1.
+Estado: implementado y en validacion para Fase 2
+Version del motor: 0.2.0
+Fecha: 2026-11-05
 
-## Sistema de coordenadas
+## Alcance y limite
 
-- Mundo: cartesiano 2D, origen configurable, `+X` a la derecha y `+Y` hacia arriba.
+El motor simula proyectiles 2D en un mundo independiente. Sus unidades y constantes son configurables;
+no afirma reproducir DragonBound, GunBound ni otro producto comercial. La configuracion inicial es un
+caso de laboratorio claramente identificado, no un perfil de juego.
+
+## Sistema de coordenadas y unidades
+
+- Mundo: cartesiano 2D, `+X` a la derecha y `+Y` hacia arriba.
 - Pantalla: origen arriba a la izquierda, `+Y` hacia abajo.
-- Unidad interna de longitud: unidad de mundo (`u`), nunca pixel.
-- Tiempo: segundos.
-- Angulo: radianes en el nucleo, grados solo en entrada y presentacion.
-- Masa: kilogramo solo si el modelo seleccionado la necesita.
-- Fuerzas/aceleraciones: unidades coherentes por segundo cuadrado.
+- Longitud: unidad de mundo (`u`), nunca pixel.
+- Tiempo: segundo (`s`).
+- Velocidad: `u/s`.
+- Aceleracion: `u/s²`.
+- Angulo: grados en entrada/UI y radianes dentro de funciones trigonometricas.
+- Viento polar: 0° apunta a `+X`, 90° a `+Y`, 180° a `-X` y 270° a `-Y`.
 
-`packages/physics` ya prueba que `worldToScreen` y `screenToWorld` son inversas. La escala y la camara
-pertenecen al renderizador, no al estado del proyectil.
+`worldToScreen` y `screenToWorld` son funciones de borde reversibles. El integrador nunca recibe
+pixeles, escala o tamaño del Canvas.
 
-## Estado minimo propuesto
+## Potencia y velocidad inicial
 
-```ts
-interface ProjectileState {
-  position: Vec2;
-  velocity: Vec2;
-  elapsedSeconds: number;
-}
+La version 0.2.0 implementa una transformacion lineal configurable:
 
-interface SimulationEnvironment {
-  gravity: Vec2;
-  windAcceleration: Vec2;
-  timeStepSeconds: number;
-  maxTimeSeconds: number;
-  worldBounds: Bounds;
-}
+```text
+v0 = baseSpeed + power × speedPerPowerUnit
+vx0 = v0 cos(theta)
+vy0 = v0 sin(theta)
 ```
 
-Todos los campos se validaran como finitos y dentro de limites documentados antes de simular.
+La configuracion inicial usa `baseSpeed = 0` y `speedPerPowerUnit = 1`, por lo que una potencia de 75
+produce 75 u/s. Esta equivalencia facilita pruebas y no es una constante verificada de un juego.
+`minimumPower` y `maximumPower` forman parte del contrato y se validan antes de simular.
 
-## Ecuaciones base
-
-Para aceleracion constante sin resistencia:
+## Estado diferencial
 
 ```text
 dx/dt = vx
@@ -46,60 +47,136 @@ dvx/dt = ax
 dvy/dt = ay
 ```
 
-La velocidad inicial se obtiene de una magnitud `v0` y un angulo `theta`:
+El estado contiene posicion, velocidad y tiempo transcurrido. El campo de aceleracion suma gravedad,
+aceleracion adicional y el modelo de viento activo.
+
+## Integradores
+
+### Runge-Kutta de orden 4
+
+RK4 evalua cuatro derivadas por paso y combina sus pendientes con pesos `1, 2, 2, 1`. Es el integrador
+predeterminado porque mantiene error global de orden cuatro y admite aceleraciones dependientes de la
+velocidad, como el arrastre lineal. Para aceleracion constante coincide con la solucion analitica hasta
+precision de punto flotante.
+
+### Euler semimplicito
+
+Euler actualiza primero velocidad y despues posicion:
 
 ```text
-vx0 = v0 cos(theta)
-vy0 = v0 sin(theta)
+v(n+1) = v(n) + a(n) dt
+x(n+1) = x(n) + v(n+1) dt
 ```
 
-Viento no significa automaticamente velocidad del aire. Cada modelo ambiental debe declarar si su
-entrada es aceleracion directa o si se usa un modelo de arrastre. No se mezclaran ambos significados.
+Es mas economico y se conserva como referencia comparativa. Su error de posicion es de primer orden;
+al dividir `dt` por cuatro, el error observado en el escenario de convergencia tambien se redujo a una
+cuarta parte.
 
-## Integrador principal
+## Gravedad, aceleracion y viento
 
-Se implementara Runge-Kutta de cuarto orden (RK4) como integrador general por su error global de orden
-cuatro y comportamiento estable con aceleraciones dependientes del estado. Euler semimplicito se
-implementara como referencia simple y para comparar costo/error. El paso temporal sera configurable y
-no se redondearan estados intermedios.
+`gravity` es una magnitud no negativa aplicada en `-Y`. `additionalAcceleration` permite un vector
+externo independiente.
 
-Para el caso analitico de aceleracion constante se comparara la simulacion con:
+Hay tres estados/modelos de viento:
+
+1. `none`: aceleracion cero.
+2. `acceleration`: la magnitud se interpreta explicitamente como `u/s²` y se descompone en X/Y.
+3. `linear-drag`: la magnitud se interpreta como velocidad del aire `u/s`; la aceleracion es:
 
 ```text
-x(t) = x0 + vx0 t + 1/2 ax t²
-y(t) = y0 + vy0 t + 1/2 ay t²
+aWind = dragCoefficientPerSecond × (airVelocity - projectileVelocity)
 ```
 
-## Terminacion y colision
+El segundo modelo no pretende ser aerodinamica completa: es un arrastre lineal configurable y
+documentado. No se mezclan silenciosamente velocidad de aire y aceleracion directa.
 
-Cada corrida termina por una causa tipada:
+## Colisiones continuas
 
-- impacto con terreno;
-- impacto con objetivo;
-- salida de limites;
-- tiempo maximo;
-- estado numerico invalido.
+Cada paso evalua la trayectoria producida por el mismo integrador, no solamente la cuerda entre sus
+extremos. El detector construye una polilinea adaptativa en orden temporal y compara las posiciones en
+un cuarto, la mitad y tres cuartos de cada intervalo con su cuerda. Subdivide cuando la desviacion
+supera la tolerancia o cuando el intervalo ocupa mas de `1/16` del paso.
 
-Se usara barrido entre la posicion anterior y la nueva para evitar atravesar terreno con pasos grandes.
-Un maximo de iteraciones derivado de `maxTime / dt` impide bucles infinitos.
+Sobre cada intervalo aceptado se prueban:
 
-## Solucionador futuro
+- suelo horizontal mediante interseccion con `groundY`;
+- terreno mediante interseccion segmento-segmento;
+- objetivos mediante interseccion segmento-circulo;
+- limites del mundo mediante el primer cruce de frontera.
 
-1. Muestreo grueso del dominio permitido.
-2. Simulacion determinista de cada candidato.
-3. Error euclidiano entre impacto y objetivo.
-4. Conservacion de maximos locales prometedores para arcos alto y bajo.
-5. Refinamiento sin redondeo interno.
-6. Resultado con restricciones activas y razon de invalidez.
+Los candidatos se refinan volviendo a evaluar la trayectoria integrada: biseccion para entradas con
+cambio de signo y minimizacion acotada para contactos tangenciales. La posicion, velocidad y tiempo de
+impacto provienen de la misma fraccion refinada. Los objetivos tienen prioridad si dos contactos
+coinciden numericamente.
 
-## Validacion
+Contrato numerico:
 
-- gravedad constante contra solucion cerrada;
-- ausencia de viento;
-- simetria de alcance para angulos complementarios en alturas iguales;
-- `dt` decreciente debe converger;
-- viento opuesto cambia el alcance con signo correcto;
-- colision no omite segmentos finos;
-- entradas no finitas y limites invalidos se rechazan.
+- tolerancia espacial maxima de aplanamiento: `1e-5 u`;
+- para objetivos pequeños: minimo entre `1e-5 u` y `radio × 1e-4`;
+- piso espacial por ruido de punto flotante: `1e-7 u`;
+- tolerancia temporal interna: `1e-10` de la fraccion del paso;
+- profundidad maxima: 16 subdivisiones.
 
-Ninguna constante del juego se incorporara a estas pruebas sin un conjunto de evidencia versionado.
+Una separacion menor que la tolerancia espacial se considera contacto numerico. El limite de
+profundidad evita trabajo no acotado con entradas extremas.
+
+Si el lanzamiento comienza sobre un segmento de terreno, el motor compara la velocidad con la normal
+ascendente del segmento. Una velocidad normal menor o igual que `1e-9 u/s` registra impacto en `t=0`;
+una velocidad positiva permite separarse sin crear una colision falsa.
+
+## Altura maxima
+
+Ademas de comparar muestras, el motor detecta el cambio de signo de `vy`. Integra un paso parcial hasta
+la fraccion estimada del cruce y registra ese estado como `apexPoint`. Con aceleracion constante el
+resultado es analiticamente exacto para RK4; con fuerzas no lineales es una estimacion de orden del paso.
+
+## Terminacion segura
+
+Cada simulacion finaliza por una razon tipada:
+
+- `ground-impact`;
+- `terrain-impact`;
+- `target-impact`;
+- `out-of-bounds`;
+- `maximum-time`;
+- `maximum-iterations`;
+- `invalid-numeric-state`;
+- `invalid-input`.
+
+El paso debe estar en `(0, 1]`, el tiempo maximo en `(0, 600]` y las iteraciones entre 1 y 250,000.
+Todos los escalares/vectores deben ser finitos. Un estado `NaN`/infinito se detecta y termina sin bucle.
+
+## Resultado
+
+`SimulationResult` incluye estado, motivo, trayectoria completa, posicion final, impacto opcional,
+tiempo de vuelo, alcance horizontal, altura maxima, apice, iteraciones, advertencias, errores y una
+copia de los parametros utilizados con velocidad inicial derivada.
+
+## Validacion numerica reproducible
+
+| Caso                               | Resultado del motor                          | Referencia / criterio                                     |
+| ---------------------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| RK4, 30 u/s, 35°, 2 s              | `(51.14912265733945, 24.794586181062787)`    | solucion cerrada `(51.14912265733951, 24.79458618106276)` |
+| Error absoluto RK4                 | X `6.39e-14`, Y `2.84e-14`                   | menor que `1e-9`                                          |
+| 40 u/s, 30° vs 60°                 | alcances `141.247396` y `141.247653` u       | diferencia `0.000258` u                                   |
+| Apice 30° vs 60°                   | `20.387360` vs `61.162080` u                 | el arco alto supera al bajo                               |
+| Viento horizontal -1 / 0 / +1 u/s² | `112.143113` / `124.872184` / `137.601254` u | orden monotono correcto                                   |
+| Euler `dt=0.2` vs `dt=0.05`        | errores Y `1.962` y `0.4905` u               | relacion `0.25`                                           |
+| Curva `dt=1`, objetivo `(5,12.5)`  | impacto `t=0.4800039972485186`               | error radial `-4.59e-10 u`                                |
+| Tangencia en el apice              | contacto `t=0.49999999827523156`             | referencia analitica `t=0.5`                              |
+| Salida curva con extremos dentro   | salida `t=0.2763932023080997`                | referencia analitica `0.276393202250021`                  |
+
+Las pruebas tambien cubren viento vertical, arrastre lineal contra solucion cerrada, alturas iniciales,
+suelo, terreno, objetivos de radio `0.01`, falsos positivos de cuerda, contactos al inicio, diferentes
+`dt`, gravedad cero, parametros invalidos, limite de iteraciones y conversion mundo/pantalla.
+
+## Limitaciones pendientes
+
+- El Canvas usa suelo horizontal y objetivo circular; el motor admite segmentos, pero aun no existe un
+  editor visual de terreno.
+- No hay resistencia cuadratica, densidad atmosferica, rotacion, proyectiles multiples ni eventos por
+  tipo de disparo.
+- La deteccion adaptativa aproxima la curva por intervalos hasta las tolerancias declaradas; geometria
+  o escalas menores que `1e-7 u` no se distinguen como entidades separadas.
+- El punto de apice con fuerzas no lineales usa una fraccion basada en velocidades de los extremos.
+- El solucionador inverso de angulo/potencia pertenece a Fase 3 y no se implementa aqui.

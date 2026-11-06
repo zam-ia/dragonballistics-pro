@@ -17,14 +17,25 @@ Vitest ejecuta funciones puras y esquemas:
 - residuos de calibracion;
 - tipos/tamaños de imagen;
 - importacion/exportacion versionada.
-
-Fase 2 añadira soluciones analiticas, convergencia de integrador, limites y terminacion.
+- RK4 frente a solucion analitica de aceleracion constante;
+- Euler semimplicito y convergencia al reducir `dt`;
+- descomposicion polar y modelos de viento;
+- angulos complementarios, alturas y gravedad cero;
+- colision continua con suelo, segmentos y objetivos circulares;
+- primer impacto, salida de limites y limites de tiempo/iteraciones;
+- colision sobre curva con `dt=1`, rechazo del falso positivo de cuerda y contacto tangencial;
+- contacto inicial con terreno: impacto al entrar y separacion permitida al salir;
+- objetivos de radio `0.01`, impactos al inicio y estabilidad con diferentes `dt`;
+- salida y reentrada curva de limites con ambos extremos del paso dentro;
+- arrastre lineal frente a su solucion analitica exponencial;
+- potencia cero, entradas no finitas y estados numericos invalidos.
 
 ### Integracion
 
-En Fase 1 la integracion principal es estado Zustand + Dexie + esquemas. El recorrido E2E comprueba que
-un cambio de coordenadas sobrevive una recarga. Futuras pruebas uniran perfil, motor, solucionador y
-persistencia sin depender de la UI.
+Zustand, Dexie y Zod se prueban con IndexedDB emulado. Los casos cubren migracion de un registro de
+Fase 1, recuperacion individual cuando falta o falla uno de cuatro registros y persistencia ordenada de
+ediciones rapidas en los cuatro espacios. El recorrido E2E comprueba ademas que los cambios sobreviven
+una recarga real del navegador.
 
 ### End-to-end
 
@@ -36,6 +47,9 @@ Playwright en Chromium verifica:
 4. recarga con persistencia IndexedDB;
 5. ruta desconocida con recuperacion;
 6. controles principales sin errores de pagina.
+7. recalculo al cambiar angulo, potencia y viento;
+8. comparacion de dos trayectorias;
+9. persistencia del modelo de viento y parametros de comparacion.
 
 ## Calidad estatica
 
@@ -46,8 +60,9 @@ Playwright en Chromium verifica:
 
 ## CI
 
-GitHub Actions usa Node 24 y pnpm 11, instala con lockfile congelado, ejecuta `pnpm check`, instala
-Chromium y corre E2E. Una falla impide considerar la revision verificable.
+GitHub Actions usa Node 24 y pnpm 11, instala con lockfile congelado y ejecuta `pnpm check`, cuyo primer
+control es `pnpm format:check`, antes de lint, TypeScript, unitarias y build. Despues instala Chromium y
+corre E2E. Una falla impide considerar la revision verificable.
 
 ## Datos de prueba
 
@@ -64,6 +79,7 @@ marcan cumplidos hasta capturar mediciones repetibles.
 
 ## Evidencia de esta entrega
 
-La verificacion del 2026-11-05 aprobo 12 pruebas unitarias en 6 archivos y 2 recorridos E2E en
-Chromium. Lint, TypeScript, formato y build tambien aprobaron. El detalle reproducible esta en
-`docs/reports/phase-0-1-verification.md` y en la seccion “Verificacion” del roadmap.
+La verificacion de Fase 1 del 2026-11-05 aprobo 12 pruebas unitarias en 6 archivos y 2 recorridos E2E.
+La primera entrega de Fase 2 alcanzo 37 pruebas en 10 archivos. La revision tecnica del PR #1 eleva la
+suite a 49 pruebas en 11 archivos y mantiene 3 recorridos E2E. Los resultados numericos y comandos
+finales estan registrados en `docs/reports/phase-2-verification.md`.

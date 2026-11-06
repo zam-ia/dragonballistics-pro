@@ -5,8 +5,8 @@ test('opens, navigates, persists geometry and recovers unknown routes', async ({
   page.on('pageerror', (error) => pageErrors.push(error));
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Laboratorio de geometria' })).toBeVisible();
-  await expect(page.getByText('Geometria validada')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Simulador balistico 2D' })).toBeVisible();
+  await expect(page.getByText('Motor fisico activo')).toBeVisible();
   await expect(page.getByLabel('Punto objetivo X')).toHaveValue('680');
 
   await page.getByLabel('Punto objetivo X').fill('712.5');
@@ -27,7 +27,7 @@ test('opens, navigates, persists geometry and recovers unknown routes', async ({
   await page.goto('/ruta-inexistente');
   await expect(page.getByRole('heading', { name: 'Este modulo no existe' })).toBeVisible();
   await page.getByRole('link', { name: 'Ir al laboratorio' }).click();
-  await expect(page.getByRole('heading', { name: 'Laboratorio de geometria' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Simulador balistico 2D' })).toBeVisible();
 
   expect(pageErrors).toEqual([]);
 });
@@ -46,4 +46,32 @@ test('switches between four independent workspaces', async ({ page }) => {
 
   await selector.selectOption('workspace-2');
   await expect(page.getByLabel('Punto de lanzamiento X')).toHaveValue('240');
+});
+
+test('recalculates trajectory controls and compares a second simulation', async ({ page }) => {
+  await page.goto('/');
+  const rangeMetric = page
+    .getByRole('article')
+    .filter({ hasText: 'ALCANCE HORIZONTAL' })
+    .locator('strong');
+  const initialRange = await rangeMetric.textContent();
+
+  await page.getByLabel('Angulo de lanzamiento').fill('35');
+  await page.getByLabel('Potencia').fill('60');
+  await page.getByLabel('Magnitud del viento').fill('1.5');
+  await expect(rangeMetric).not.toHaveText(initialRange ?? '');
+
+  await page.getByLabel('Comparar segunda simulacion').check();
+  await expect(page.getByText('COMPARACION')).toBeVisible();
+  await page.getByLabel('Angulo de comparacion').fill('70');
+  await page.getByLabel('Potencia de comparacion').fill('50');
+
+  await page.getByLabel('Modelo de viento').selectOption('linear-drag');
+  await expect(page.getByLabel('Coeficiente de arrastre')).toBeVisible();
+  await page.getByLabel('Coeficiente de arrastre').fill('0.08');
+
+  await page.reload();
+  await expect(page.getByLabel('Angulo de lanzamiento')).toHaveValue('35');
+  await expect(page.getByLabel('Comparar segunda simulacion')).toBeChecked();
+  await expect(page.getByLabel('Modelo de viento')).toHaveValue('linear-drag');
 });

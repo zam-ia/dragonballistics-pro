@@ -445,11 +445,20 @@ select {
   min-height: 560px;
 }
 
+.workbench-grid.physics-layout {
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 720px;
+}
+
 .control-panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
   padding: 17px;
+}
+
+.physics-controls-panel {
+  gap: 16px;
 }
 
 .field-group {
@@ -509,6 +518,20 @@ select {
   gap: 6px;
 }
 
+.numeric-field {
+  display: grid;
+  gap: 6px;
+}
+
+.numeric-field > span {
+  min-height: 20px;
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+}
+
 .boundary-note {
   display: flex;
   align-items: flex-start;
@@ -538,6 +561,11 @@ select {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+}
+
+.physics-canvas-panel {
+  min-height: 720px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .panel-heading {
@@ -574,11 +602,42 @@ select {
   letter-spacing: 0.04em !important;
 }
 
+.canvas-legend {
+  display: flex !important;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 9px !important;
+}
+
+.canvas-legend .primary-line,
+.canvas-legend .comparison-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.06em;
+}
+
+.canvas-legend .primary-line::before,
+.canvas-legend .comparison-line::before {
+  content: '';
+  width: 13px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.canvas-legend .comparison-line::before {
+  background: #a78bfa;
+}
+
 .geometry-canvas-frame {
   position: relative;
   min-width: 0;
   min-height: 420px;
   overflow: hidden;
+}
+
+.physics-canvas-panel .geometry-canvas-frame {
+  min-height: 620px;
 }
 
 .geometry-canvas {
@@ -600,6 +659,100 @@ select {
   font-weight: 750;
   letter-spacing: 0.1em;
   pointer-events: none;
+}
+
+.physics-controls {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.control-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.physics-controls select {
+  width: 100%;
+  min-width: 0;
+}
+
+.comparison-controls {
+  display: grid;
+  gap: 11px;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, #a78bfa 22%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, #a78bfa 7%, transparent);
+}
+
+.comparison-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.comparison-toggle input {
+  accent-color: #a78bfa;
+}
+
+.result-messages {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--warning) 24%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--warning) 7%, transparent);
+}
+
+.result-messages.error {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.result-messages p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.simulation-footer {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--border-soft);
+}
+
+.simulation-footer span {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 7.5px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+
+.simulation-footer strong {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .research-summary {
@@ -940,9 +1093,17 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .workbench-grid.physics-layout {
+    grid-template-columns: 1fr;
+  }
+
   .control-panel {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .control-panel.physics-controls-panel {
+    display: flex;
   }
 
   .boundary-note {
@@ -1016,8 +1177,26 @@ select {
     min-height: 490px;
   }
 
+  .physics-canvas-panel,
+  .workbench-grid.physics-layout {
+    min-height: 610px;
+  }
+
   .geometry-canvas-frame {
     min-height: 390px;
+  }
+
+  .physics-canvas-panel .geometry-canvas-frame {
+    min-height: 460px;
+  }
+
+  .canvas-legend {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+
+  .simulation-footer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .nav-link {

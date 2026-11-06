@@ -26,8 +26,13 @@ id          workspace-1 | workspace-2 | workspace-3 | workspace-4
 name        1..48 caracteres
 launch      Vec2
 target      Vec2
+simulation  SimulationControls
 updatedAt   ISO 8601 UTC
 ```
+
+`SimulationControls` guarda angulo, potencia, gravedad, modelo/magnitud/direccion de viento,
+coeficiente de arrastre, integrador, paso temporal y una comparacion opcional. Al leer un registro de
+Fase 1 sin este campo, Zod agrega defaults 0.2.0 sin perder nombre o coordenadas.
 
 ### `AppPreferences`
 
@@ -65,6 +70,7 @@ Dexie inicia en version 1. Toda ampliacion debe:
 
 ## Datos futuros
 
-Fase 2 agregara `SimulationInput`, `SimulationResult`, `TrajectoryPoint` y `TerminationReason`. Fases de
-calibracion agregaran `ParameterSet`, `DatasetSplit`, `CalibrationRun` y `EvaluationReport`. Estos
-contratos no se declaran prematuramente como terminados.
+Fase 2 agrega `SimulationInput`, `SimulationResult`, `TrajectoryPoint`, `ImpactResult`,
+`SimulationTerminationReason`, `WindModel`, `TerrainSegment` y `CircularTarget` dentro del paquete
+`physics`. Fases de calibracion agregaran `ParameterSet`, `DatasetSplit`, `CalibrationRun` y
+`EvaluationReport`; esos contratos futuros no se declaran prematuramente como terminados.

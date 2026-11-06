@@ -26,4 +26,19 @@ describe('shared schemas', () => {
 
     expect(result.success).toBe(false);
   });
+
+  it('upgrades a Phase 1 workspace with default simulation controls', () => {
+    const legacyWorkspace = {
+      id: 'workspace-1',
+      name: 'Legacy',
+      launch: { x: 10, y: 20 },
+      target: { x: 30, y: 40 },
+      updatedAt: '2026-11-05T00:00:00.000Z',
+    };
+
+    const parsed = WorkspaceSchema.parse(legacyWorkspace);
+
+    expect(parsed.simulation.integrator).toBe('rk4');
+    expect(parsed.simulation.gravity).toBe(9.81);
+  });
 });

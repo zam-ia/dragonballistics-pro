@@ -20,3 +20,14 @@ explicitamente. No observa o controla un juego en ejecucion.
 
 El overlay WinForms anterior se conserva como utilidad manual, pero no se amplifica con adquisicion
 automatica. La exactitud se evalua mediante escenarios sinteticos y observaciones importadas con fuente.
+
+## Confirmacion de implementacion en Fase 2
+
+El motor vive en `@dragonballistics/physics` y conserva funciones puras y deterministas. No conoce
+React, IndexedDB, Canvas ni coordenadas de pantalla: recibe unidades de mundo tipadas y devuelve
+resultados tipados. La aplicacion web compone el motor con persistencia y visualizacion sin invertir esa
+dependencia.
+
+La relacion provisional entre potencia y velocidad inicial esta identificada como modelo independiente
+y configurable. No se presenta como una constante oficial de un juego. Viento, gravedad, terreno y
+objetivos provienen de entradas explicitas; la simulacion no usa aleatoriedad ni adquisicion en vivo.

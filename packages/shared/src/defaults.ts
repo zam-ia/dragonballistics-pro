@@ -1,7 +1,12 @@
-import type { AppPreferences, Workspace, WorkspaceId } from './schemas';
+import {
+  createDefaultSimulationControls,
+  type AppPreferences,
+  type Workspace,
+  type WorkspaceId,
+} from './schemas';
 
 export const APP_NAME = 'DragonBallistics Pro';
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.2.0';
 
 export const defaultPreferences: AppPreferences = {
   theme: 'dark',
@@ -23,6 +28,7 @@ export function createDefaultWorkspaces(now = new Date().toISOString()): Workspa
     name: `Espacio ${index + 1}`,
     launch: { x: 120, y: 80 },
     target: { x: 680, y: 150 },
+    simulation: createDefaultSimulationControls(),
     updatedAt: now,
   }));
 }

@@ -1,6 +1,6 @@
 # Arquitectura de DragonBallistics Pro
 
-Estado: aprobada para Fase 1  
+Estado: implementada hasta Fase 2
 Fecha: 2026-11-05  
 Decision principal: monorepo local, TypeScript estricto y dependencias dirigidas.
 
@@ -44,8 +44,22 @@ sesion y Dexie guarda cuatro espacios y preferencias en IndexedDB.
 
 ### Fisica
 
-Funciones puras, deterministas y sin dependencia del DOM. Fase 1 incluye geometria y transformaciones
-reversibles. Fase 2 agregara estado de proyectil, fuerzas, RK4, colisiones y resultados tipados.
+Funciones puras, deterministas y sin dependencia del DOM. El paquete contiene contratos, validacion,
+transformacion potencia/velocidad, fuerzas, viento, RK4, Euler semimplicito, colisiones continuas,
+solucion analitica de referencia y orquestacion segura de simulaciones. Ningun modulo importa React.
+
+```text
+physics/
+  analytic.ts       solucion cerrada para aceleracion constante
+  collisions.ts     suelo, segmentos, circulos y limites
+  forces.ts         composicion de gravedad, aceleracion y viento
+  integrators.ts    RK4 y Euler semimplicito
+  power.ts          potencia configurable a velocidad inicial
+  simulation.ts     bucle, apice, impacto, terminacion y resultado
+  types.ts          contratos publicos
+  validation.ts     limites, finitud y mensajes
+  wind.ts           polar, aceleracion directa y arrastre lineal
+```
 
 ### Moviles
 
@@ -69,6 +83,13 @@ IndexedDB contiene dos tablas versionadas:
 - `workspaces`: clave `id`, cuatro registros con lanzamiento, objetivo y fecha de cambio.
 - `settings`: clave constante `app`, espacio activo y preferencias visuales.
 
+Cada workspace incluye controles de simulacion. El esquema Zod asigna defaults de Fase 2 al leer un
+registro de Fase 1, de modo que coordenadas y nombres existentes se conservan sin una migracion
+destructiva. La hidratacion valida y recupera cada ID por separado: un registro ausente o invalido se
+repara con su default sin reemplazar sus tres hermanos validos. Los cambios se serializan en una cola
+por workspace y los ajustes en otra cola, evitando que una escritura lenta de una edicion anterior
+sobrescriba una edicion rapida posterior.
+
 La importacion acepta como maximo 1 MB, exige JSON version 1 y valida el documento completo con Zod
 antes de escribir una transaccion. La exportacion no incluye credenciales ni datos de juegos.
 
@@ -81,9 +102,17 @@ antes de escribir una transaccion. La exportacion no incluye credenciales ni dat
 
 ## Rendimiento
 
-Canvas ajusta su backing store al `devicePixelRatio` y redibuja solo ante cambios de geometria,
-preferencias o tamaño. El integrador y el solucionador futuros se moveran a Web Workers cuando una
-medicion reproducible muestre bloqueo del hilo principal; no se introduce esa complejidad antes.
+Canvas ajusta su backing store al `devicePixelRatio`. React memoiza entradas y resultados, por lo que
+la simulacion solo se repite cuando cambia el workspace o sus parametros. El Canvas recibe puntos ya
+calculados y solo convierte mundo a pantalla. El solucionador futuro se movera a Web Workers si una
+medicion reproducible muestra bloqueo; la simulacion individual actual no justifica ese costo.
+
+## Integracion de Fase 2
+
+`WorkbenchPage` adapta controles persistidos a `SimulationInput` y llama a `simulateProjectile` dentro
+de `useMemo`. El Canvas dibuja trayectoria primaria, comparacion opcional, objetivo, impacto y apice.
+Los cuatro espacios siguen siendo independientes; importar/exportar incluye los controles porque son
+parte del workspace validado.
 
 ## Distribucion Windows
 

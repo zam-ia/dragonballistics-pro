@@ -6,6 +6,12 @@ interface GeometryCanvasProps {
   launch: Vec2;
   target: Vec2;
   showGrid: boolean;
+  primaryPath: readonly Vec2[];
+  comparisonPath: readonly Vec2[];
+  primaryImpact: Vec2 | null;
+  comparisonImpact: Vec2 | null;
+  primaryApex: Vec2;
+  comparisonApex: Vec2 | null;
   onPointChange: (kind: 'launch' | 'target', point: Vec2) => void;
 }
 
@@ -23,7 +29,18 @@ function distanceInPixels(a: Vec2, b: Vec2) {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-export function GeometryCanvas({ launch, target, showGrid, onPointChange }: GeometryCanvasProps) {
+export function GeometryCanvas({
+  launch,
+  target,
+  showGrid,
+  primaryPath,
+  comparisonPath,
+  primaryImpact,
+  comparisonImpact,
+  primaryApex,
+  comparisonApex,
+  onPointChange,
+}: GeometryCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragTarget>(null);
@@ -114,9 +131,38 @@ export function GeometryCanvas({ launch, target, showGrid, onPointChange }: Geom
     context.stroke();
     context.setLineDash([]);
 
+    drawPath(context, primaryPath, transform, '#3dd6d0', false);
+    if (comparisonPath.length > 0) {
+      drawPath(context, comparisonPath, transform, '#a78bfa', true);
+    }
+
+    drawTargetRadius(context, targetScreen, 10 * transform.pixelsPerUnit);
+    drawApex(context, worldToScreen(primaryApex, transform), '#3dd6d0');
+    if (comparisonApex) {
+      drawApex(context, worldToScreen(comparisonApex, transform), '#a78bfa');
+    }
+    if (primaryImpact) {
+      drawImpact(context, worldToScreen(primaryImpact, transform), '#3dd6d0');
+    }
+    if (comparisonImpact) {
+      drawImpact(context, worldToScreen(comparisonImpact, transform), '#a78bfa');
+    }
+
     drawPoint(context, launchScreen, '#3dd6d0', 'LANZAMIENTO');
     drawPoint(context, targetScreen, '#f4b860', 'OBJETIVO');
-  }, [launch, target, showGrid, size, transform]);
+  }, [
+    comparisonApex,
+    comparisonImpact,
+    comparisonPath,
+    launch,
+    primaryApex,
+    primaryImpact,
+    primaryPath,
+    showGrid,
+    size,
+    target,
+    transform,
+  ]);
 
   function getPointerPosition(event: React.PointerEvent<HTMLCanvasElement>): Vec2 {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -175,5 +221,69 @@ function drawPoint(context: CanvasRenderingContext2D, point: Vec2, color: string
   context.fillStyle = color;
   context.font = '600 10px Inter, system-ui, sans-serif';
   context.fillText(label, point.x + 13, point.y - 11);
+  context.restore();
+}
+
+function drawPath(
+  context: CanvasRenderingContext2D,
+  path: readonly Vec2[],
+  transform: ViewportTransform,
+  color: string,
+  dashed: boolean,
+) {
+  const first = path[0];
+  if (!first) return;
+  context.save();
+  context.strokeStyle = color;
+  context.lineWidth = 2.2;
+  context.shadowColor = color;
+  context.shadowBlur = 5;
+  if (dashed) context.setLineDash([8, 5]);
+  const start = worldToScreen(first, transform);
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  for (let index = 1; index < path.length; index += 1) {
+    const point = path[index];
+    if (!point) continue;
+    const screen = worldToScreen(point, transform);
+    context.lineTo(screen.x, screen.y);
+  }
+  context.stroke();
+  context.restore();
+}
+
+function drawTargetRadius(context: CanvasRenderingContext2D, point: Vec2, radius: number) {
+  context.save();
+  context.strokeStyle = 'rgba(244, 184, 96, 0.55)';
+  context.lineWidth = 1;
+  context.setLineDash([3, 3]);
+  context.beginPath();
+  context.arc(point.x, point.y, Math.max(7, radius), 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
+}
+
+function drawApex(context: CanvasRenderingContext2D, point: Vec2, color: string) {
+  context.save();
+  context.translate(point.x, point.y);
+  context.rotate(Math.PI / 4);
+  context.fillStyle = color;
+  context.fillRect(-4, -4, 8, 8);
+  context.restore();
+  context.fillStyle = color;
+  context.font = '700 8px Inter, system-ui, sans-serif';
+  context.fillText('APEX', point.x + 8, point.y - 8);
+}
+
+function drawImpact(context: CanvasRenderingContext2D, point: Vec2, color: string) {
+  context.save();
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(point.x - 6, point.y - 6);
+  context.lineTo(point.x + 6, point.y + 6);
+  context.moveTo(point.x + 6, point.y - 6);
+  context.lineTo(point.x - 6, point.y + 6);
+  context.stroke();
   context.restore();
 }

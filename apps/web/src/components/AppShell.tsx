@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span>No lee ni controla juegos.</span>
           </div>
         </div>
-        <span className="version-label">VERSION {APP_VERSION} · FASE 1</span>
+        <span className="version-label">VERSION {APP_VERSION} · FASE 2</span>
       </aside>
 
       <section className="app-column">
