@@ -259,6 +259,49 @@ describe('projectile simulation', () => {
     expect(result.impact?.point).toEqual({ x: 0, y: 10 });
   });
 
+  it('detects an initial terrain impact when launching downward from the surface', () => {
+    const result = simulateProjectile(
+      curvedOneSecondStep({
+        launchPosition: { x: 5, y: 10 },
+        launchAngleDegrees: -45,
+        collisions: {
+          terrain: [{ start: { x: 0, y: 10 }, end: { x: 20, y: 10 } }],
+          targets: [],
+        },
+      }),
+    );
+
+    expect(result.terminationReason).toBe('terrain-impact');
+    expect(result.flightTimeSeconds).toBe(0);
+    expect(result.iterations).toBe(0);
+    expect(result.impact).toMatchObject({
+      kind: 'terrain',
+      point: { x: 5, y: 10 },
+      terrainSegmentIndex: 0,
+    });
+    expect(result.impact?.normal.x).toBeCloseTo(0, 12);
+    expect(result.impact?.normal.y).toBeCloseTo(1, 12);
+  });
+
+  it('allows an upward launch to separate from its initial terrain segment', () => {
+    const result = simulateProjectile(
+      curvedOneSecondStep({
+        launchPosition: { x: 5, y: 10 },
+        launchAngleDegrees: 45,
+        timeStepSeconds: 0.25,
+        maximumTimeSeconds: 0.25,
+        collisions: {
+          terrain: [{ start: { x: 0, y: 10 }, end: { x: 20, y: 10 } }],
+          targets: [],
+        },
+      }),
+    );
+
+    expect(result.terminationReason).toBe('maximum-time');
+    expect(result.impact).toBeNull();
+    expect(result.finalPosition.y).toBeGreaterThan(10);
+  });
+
   it('detects a curved bounds exit even when both step endpoints are inside', () => {
     const result = simulateProjectile(
       curvedOneSecondStep({

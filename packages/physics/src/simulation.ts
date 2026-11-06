@@ -1,5 +1,9 @@
 import type { Vec2 } from '@dragonballistics/shared';
-import { findFirstCollision, findFirstTrajectoryEvent } from './collisions';
+import {
+  findFirstCollision,
+  findFirstTrajectoryEvent,
+  findInitialTerrainCollision,
+} from './collisions';
 import { createAccelerationField } from './forces';
 import { integrateStep } from './integrators';
 import { powerToInitialSpeed } from './power';
@@ -86,6 +90,27 @@ export function simulateProjectile(input: SimulationInput): SimulationResult {
       initialSpeed,
       status: 'completed',
       terminationReason: 'target-impact',
+      trajectory,
+      finalState: trajectory[0] ?? emptyPoint,
+      apexPoint,
+      impact,
+      iterations: 0,
+      warnings: validation.warnings,
+      errors: [],
+    });
+  }
+  const initialTerrainCollision = findInitialTerrainCollision(
+    state.position,
+    state.velocity,
+    input.collisions,
+  );
+  if (initialTerrainCollision) {
+    const impact = collisionToImpact(initialTerrainCollision, 0);
+    return createResult({
+      input,
+      initialSpeed,
+      status: 'completed',
+      terminationReason: 'terrain-impact',
       trajectory,
       finalState: trajectory[0] ?? emptyPoint,
       apexPoint,

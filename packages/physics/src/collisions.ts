@@ -45,6 +45,44 @@ export function findFirstCollision(
   return collectSegmentCollisionCandidates(from, to, world, 0)[0] ?? null;
 }
 
+export function findInitialTerrainCollision(
+  position: Vec2,
+  velocity: Vec2,
+  world: CollisionWorld,
+): CollisionCandidate | null {
+  const coordinateScale = Math.max(1, Math.abs(position.x), Math.abs(position.y));
+  const tolerance = Math.max(
+    COLLISION_NUMERICS.minimumPositionTolerance,
+    coordinateScale * Number.EPSILON * 64,
+  );
+
+  for (
+    let terrainSegmentIndex = 0;
+    terrainSegmentIndex < world.terrain.length;
+    terrainSegmentIndex += 1
+  ) {
+    const terrain = world.terrain[terrainSegmentIndex];
+    if (
+      !terrain ||
+      Math.abs(signedLineDistance(position, terrain)) > tolerance ||
+      !pointProjectsOntoSegment(position, terrain, tolerance)
+    ) {
+      continue;
+    }
+    const normal = upwardNormal(terrain);
+    const separatingSpeed = velocity.x * normal.x + velocity.y * normal.y;
+    if (separatingSpeed > EPSILON) continue;
+    return {
+      fraction: 0,
+      kind: 'terrain',
+      point: { ...position },
+      normal,
+      terrainSegmentIndex,
+    };
+  }
+  return null;
+}
+
 /**
  * Finds the first event on the integrated path, rather than on the chord joining the step endpoints.
  * The evaluator must return the position produced by the same integrator used for the simulation.
