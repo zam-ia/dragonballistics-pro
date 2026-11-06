@@ -35,6 +35,16 @@ interface PathSample {
 export interface TrajectoryStepEvent {
   collision: CollisionCandidate | null;
   boundsExit: BoundsExitCandidate | null;
+  closestApproach: TrajectoryTargetApproachCandidate | null;
+}
+
+export interface TrajectoryTargetApproachCandidate {
+  targetId: string;
+  fraction: number;
+  point: Vec2;
+  centerDistance: number;
+  surfaceDistance: number;
+  spatialTolerance: number;
 }
 
 export function findFirstCollision(
@@ -91,11 +101,13 @@ export function findFirstTrajectoryEvent(
   positionAtFraction: (fraction: number) => Vec2,
   world: CollisionWorld,
   bounds: WorldBounds,
+  proximityTargets: readonly CircularTarget[] = [],
 ): TrajectoryStepEvent {
   const start = positionAtFraction(0);
   const end = positionAtFraction(1);
   const positionTolerance = collisionPositionTolerance(start, end, world, bounds);
   const samples = flattenTrajectory(positionAtFraction, start, end, positionTolerance);
+  let closestApproach: TrajectoryTargetApproachCandidate | null = null;
 
   for (let index = 0; index < samples.length - 1; index += 1) {
     const leafStart = samples[index];
@@ -122,10 +134,97 @@ export function findFirstTrajectoryEvent(
       ? refineBoundsExit(leafStart, leafEnd, positionAtFraction, bounds, positionTolerance)
       : null;
 
-    if (collision || boundsExit) return { collision, boundsExit };
+    const stoppingFraction = Math.min(
+      collision?.fraction ?? 1,
+      boundsExit?.fraction ?? 1,
+      leafEnd.fraction,
+    );
+    if (proximityTargets.length > 0 && stoppingFraction >= leafStart.fraction) {
+      const stoppingPoint =
+        Math.abs(stoppingFraction - leafEnd.fraction) <= EPSILON
+          ? leafEnd.point
+          : positionAtFraction(stoppingFraction);
+      closestApproach = nearerApproach(
+        closestApproach,
+        closestTargetApproachOnSegment(
+          leafStart,
+          { fraction: stoppingFraction, point: stoppingPoint },
+          proximityTargets,
+          positionTolerance,
+        ),
+      );
+      if (collision?.kind === 'target') {
+        const contactTarget = proximityTargets.find((target) => target.id === collision.targetId);
+        if (contactTarget) {
+          closestApproach = nearerApproach(closestApproach, {
+            targetId: contactTarget.id,
+            fraction: collision.fraction,
+            point: { ...collision.point },
+            centerDistance: contactTarget.radius,
+            surfaceDistance: 0,
+            spatialTolerance: positionTolerance,
+          });
+        }
+      }
+    }
+
+    if (collision || boundsExit) return { collision, boundsExit, closestApproach };
   }
 
-  return { collision: null, boundsExit: null };
+  return { collision: null, boundsExit: null, closestApproach };
+}
+
+function closestTargetApproachOnSegment(
+  start: PathSample,
+  end: PathSample,
+  targets: readonly CircularTarget[],
+  spatialTolerance: number,
+): TrajectoryTargetApproachCandidate | null {
+  const deltaX = end.point.x - start.point.x;
+  const deltaY = end.point.y - start.point.y;
+  const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+  let closest: TrajectoryTargetApproachCandidate | null = null;
+
+  for (const target of targets) {
+    const segmentFraction =
+      lengthSquared <= EPSILON
+        ? 0
+        : clampFraction(
+            ((target.center.x - start.point.x) * deltaX +
+              (target.center.y - start.point.y) * deltaY) /
+              lengthSquared,
+          );
+    const point = interpolatePoint(start.point, end.point, segmentFraction);
+    const centerDistance = pointDistance(point, target.center);
+    const candidate: TrajectoryTargetApproachCandidate = {
+      targetId: target.id,
+      fraction: start.fraction + (end.fraction - start.fraction) * segmentFraction,
+      point,
+      centerDistance,
+      surfaceDistance: Math.max(0, centerDistance - target.radius),
+      spatialTolerance,
+    };
+    closest = nearerApproach(closest, candidate);
+  }
+  return closest;
+}
+
+function nearerApproach(
+  left: TrajectoryTargetApproachCandidate | null,
+  right: TrajectoryTargetApproachCandidate | null,
+): TrajectoryTargetApproachCandidate | null {
+  if (!left) return right;
+  if (!right) return left;
+  if (Math.abs(left.surfaceDistance - right.surfaceDistance) > EPSILON) {
+    return right.surfaceDistance < left.surfaceDistance ? right : left;
+  }
+  if (Math.abs(left.centerDistance - right.centerDistance) > EPSILON) {
+    return right.centerDistance < left.centerDistance ? right : left;
+  }
+  if (Math.abs(left.fraction - right.fraction) > EPSILON) {
+    return right.fraction < left.fraction ? right : left;
+  }
+  return right.targetId < left.targetId ? right : left;
 }
 
 export function findBoundsExit(

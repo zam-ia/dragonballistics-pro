@@ -133,6 +133,40 @@ export interface SimulationResult {
   parametersUsed: SimulationParametersUsed;
 }
 
+export interface SummaryEvaluationOptions {
+  /**
+   * Limits closest-approach tracking to one configured target. When omitted, the nearest configured
+   * target is reported. An unknown id is treated as invalid input.
+   */
+  targetId?: string;
+}
+
+export interface ClosestTargetApproach {
+  targetId: string;
+  point: Vec2;
+  elapsedSeconds: number;
+  centerDistance: number;
+  surfaceDistance: number;
+  /** Maximum geometric deviation allowed by the adaptive path approximation for this sample. */
+  spatialTolerance: number;
+}
+
+export interface SimulationSummary {
+  status: SimulationStatus;
+  terminationReason: SimulationTerminationReason;
+  finalState: TrajectoryPoint;
+  impact: ImpactResult | null;
+  flightTimeSeconds: number;
+  horizontalRange: number;
+  maximumHeight: number;
+  apexPoint: TrajectoryPoint;
+  closestApproach: ClosestTargetApproach | null;
+  iterations: number;
+  warnings: SimulationMessage[];
+  errors: SimulationMessage[];
+  parametersUsed: SimulationParametersUsed;
+}
+
 export interface CollisionCandidate {
   fraction: number;
   kind: ImpactKind;
