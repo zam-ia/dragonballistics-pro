@@ -22,6 +22,9 @@ All notable changes to DragonBallistics Pro are recorded here.
 - IndexedDB hydration repairs workspaces individually and serializes rapid writes per workspace.
 - CI now includes `pnpm format:check` through the required `pnpm check` gate.
 - The transitive development dependency `minimatch` is pinned to patched version 11.0.1.
+- Initial terrain contact now stops inward/downward launches at time zero while allowing separating
+  launches to leave the surface.
+- A reproducible physics benchmark records default and `dt=0.001` execution, iteration and heap costs.
 
 ## 0.1.0 - 2026-11-05
 

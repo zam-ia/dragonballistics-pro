@@ -24,6 +24,7 @@ Vitest ejecuta funciones puras y esquemas:
 - colision continua con suelo, segmentos y objetivos circulares;
 - primer impacto, salida de limites y limites de tiempo/iteraciones;
 - colision sobre curva con `dt=1`, rechazo del falso positivo de cuerda y contacto tangencial;
+- contacto inicial con terreno: impacto al entrar y separacion permitida al salir;
 - objetivos de radio `0.01`, impactos al inicio y estabilidad con diferentes `dt`;
 - salida y reentrada curva de limites con ambos extremos del paso dentro;
 - arrastre lineal frente a su solucion analitica exponencial;
@@ -80,5 +81,5 @@ marcan cumplidos hasta capturar mediciones repetibles.
 
 La verificacion de Fase 1 del 2026-11-05 aprobo 12 pruebas unitarias en 6 archivos y 2 recorridos E2E.
 La primera entrega de Fase 2 alcanzo 37 pruebas en 10 archivos. La revision tecnica del PR #1 eleva la
-suite a 47 pruebas en 11 archivos y mantiene 3 recorridos E2E. Los resultados numericos y comandos
+suite a 49 pruebas en 11 archivos y mantiene 3 recorridos E2E. Los resultados numericos y comandos
 finales estan registrados en `docs/reports/phase-2-verification.md`.

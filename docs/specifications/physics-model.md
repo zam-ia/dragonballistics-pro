@@ -120,6 +120,10 @@ Contrato numerico:
 Una separacion menor que la tolerancia espacial se considera contacto numerico. El limite de
 profundidad evita trabajo no acotado con entradas extremas.
 
+Si el lanzamiento comienza sobre un segmento de terreno, el motor compara la velocidad con la normal
+ascendente del segmento. Una velocidad normal menor o igual que `1e-9 u/s` registra impacto en `t=0`;
+una velocidad positiva permite separarse sin crear una colision falsa.
+
 ## Altura maxima
 
 Ademas de comparar muestras, el motor detecta el cambio de signo de `vy`. Integra un paso parcial hasta

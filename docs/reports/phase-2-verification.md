@@ -60,6 +60,9 @@ visibles actualizan el motor, la persistencia o la navegacion real.
 - `docs/reports/phase-2-verification.md`
 - `apps/web/src/store/lab-store.test.ts`
 - `docs/reports/dependency-audit-2026-11-05.md`
+- `benchmarks/physics-engine.benchmark.test.ts`
+- `vitest.benchmark.config.mts`
+- `docs/reports/physics-benchmark-2026-11-06.md`
 
 ## Archivos principales modificados
 
@@ -96,6 +99,8 @@ Todos los casos son sinteticos y reproducibles; no se usan numeros aleatorios.
 | Falso positivo de cuerda            | final `(10.000000000000002,10)`, sin impacto                         | `maximum-time`                                            |
 | Tangencia en apice                  | `t=0.49999999827523156`, punto `(4.9999999828,12.5)`                 | referencia `t=0.5`                                        |
 | Salida curva de limite              | `t=0.2763932023080997`, punto `(2.7639320231,12)`                    | referencia analitica                                      |
+| Terreno inicial, lanzamiento abajo  | impacto en `t=0`, 0 iteraciones                                      | no atraviesa el segmento                                  |
+| Terreno inicial, lanzamiento arriba | `maximum-time`, sin impacto                                          | se separa del segmento                                    |
 
 La suite tambien prueba viento vertical, arrastre lineal analitico, alturas iniciales distintas,
 gravedad cero, potencia cero, suelo, terreno segmentado, objetivos de radio `0.01`, diferentes tamaños
@@ -112,9 +117,9 @@ Entorno: Windows, Node 24.14.1, pnpm 11.25.0.
 | `pnpm format:check` | todos los archivos conformes                       |
 | `pnpm lint`         | aprobado, sin advertencias                         |
 | `pnpm typecheck`    | aprobado                                           |
-| primer `pnpm test`  | 11 archivos, 47/47 pruebas aprobadas               |
+| primer `pnpm test`  | 11 archivos, 49/49 pruebas aprobadas               |
 | `pnpm build`        | aprobado, Vite 8.3.6 y 2,188 modulos transformados |
-| segundo `pnpm test` | 11 archivos, 47/47 pruebas aprobadas               |
+| segundo `pnpm test` | 11 archivos, 49/49 pruebas aprobadas               |
 | `pnpm test:e2e`     | 3/3 recorridos Chromium aprobados                  |
 
 ## Problemas detectados y corregidos
@@ -137,6 +142,16 @@ Entorno: Windows, Node 24.14.1, pnpm 11.25.0.
 - `pnpm audit` encontro `minimatch 10.2.6` afectado por `GHSA-g3hv-75wg-m249`; el override compatible a
   `11.0.1` deja la auditoria en 0 vulnerabilidades. El detalle esta en
   `docs/reports/dependency-audit-2026-11-05.md`.
+- El contacto inicial con terreno ignoraba tanto trayectorias salientes como entrantes; ahora usa el
+  signo de la velocidad normal para detener solo las que no se separan.
+
+## Benchmark de referencia
+
+El benchmark fijo de 10 evaluaciones por escenario se registra en
+`docs/reports/physics-benchmark-2026-11-06.md`. Con parametros predeterminados midio `20.051 ms` por
+trayectoria y 608 iteraciones. Cambiar solo a `dt=0.001` alcanza el limite de 5,000 iteraciones a los
+5 segundos; completar el vuelo con un presupuesto de 30,000 iteraciones midio `900.380 ms` por
+trayectoria. No se aplicaron optimizaciones.
 
 ## Limitaciones y pendientes
 
