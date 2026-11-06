@@ -494,7 +494,11 @@ export function solveProjectile(
   // The stop callback mutates this value across nested functions; preserve the complete union.
   const finalStopReason = stopReason as SolverStopReason;
   const exhaustedBudget =
-    finalStopReason === 'time-limit' ? 'time' : finalStopReason === 'evaluation-limit' ? 'evaluations' : null;
+    finalStopReason === 'time-limit'
+      ? 'time'
+      : finalStopReason === 'evaluation-limit'
+        ? 'evaluations'
+        : null;
   const hitCount = provisional.filter((e) => e.candidate.hit).length;
   const status =
     finalStopReason === 'cancelled'
