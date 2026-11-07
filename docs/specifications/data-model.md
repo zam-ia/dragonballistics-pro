@@ -68,9 +68,13 @@ Dexie inicia en version 1. Toda ampliacion debe:
 3. conservar exportacion de la version anterior o emitir un error explicito;
 4. tener prueba de actualizacion y rollback por exportacion.
 
-## Datos futuros
+## Contratos del motor
 
 Fase 2 agrega `SimulationInput`, `SimulationResult`, `TrajectoryPoint`, `ImpactResult`,
 `SimulationTerminationReason`, `WindModel`, `TerrainSegment` y `CircularTarget` dentro del paquete
-`physics`. Fases de calibracion agregaran `ParameterSet`, `DatasetSplit`, `CalibrationRun` y
-`EvaluationReport`; esos contratos futuros no se declaran prematuramente como terminados.
+`physics`. Fase 3A agrega `SimulationSummary`, `SummaryEvaluationOptions` y
+`ClosestTargetApproach`. `SimulationSummary` conserva el estado final y diagnosticos, pero no contiene
+una trayectoria acumulada.
+
+Fases de calibracion agregaran `ParameterSet`, `DatasetSplit`, `CalibrationRun` y `EvaluationReport`;
+esos contratos futuros no se declaran prematuramente como terminados.

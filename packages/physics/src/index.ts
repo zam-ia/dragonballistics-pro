@@ -9,3 +9,4 @@ export * from './simulation';
 export * from './types';
 export * from './validation';
 export * from './wind';
+export * from './solver';
