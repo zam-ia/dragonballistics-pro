@@ -54,44 +54,47 @@ en el espacio activo mediante el store existente.
 
 ## Pruebas verificadas
 
-GitHub Actions: https://github.com/zam-ia/dragonballistics-pro/actions/runs/42314778122
+GitHub Actions: https://github.com/zam-ia/dragonballistics-pro/actions/runs/42315593860
 
 - Prettier, ESLint, TypeScript y build de producción: correctos.
 - Vitest: 129/129 pruebas; 18 archivos.
-- Playwright real Chromium: 11/11 pruebas; incluye las pruebas anteriores.
+- Playwright real Chromium: 12/12 pruebas; incluye las pruebas anteriores.
 - Benchmark inverso: 6/6 escenarios sintéticos exitosos.
 - Pruebas E2E: estado inicial, entrada inválida, búsqueda real, progreso,
   dos arcos, superposiciones, ocultación, aplicación voluntaria, cancelación,
-  recuperación tras error, cambio de espacio y cambio de objetivo.
+  recuperación tras error, cambio de espacio, cambio de objetivo,
+  navegación con teclado, aviso accesible y ausencia de errores en consola.
 - Responsive a 1440×900 y 390×844: sin overflow horizontal detectado.
+- Revisadas ambas capturas: botones móviles separados en filas,
+  comprobado también por coordenadas reales en Playwright.
 
 ## Evidencias de escritorio y móvil
 
 Capturas automáticas del panel:
-https://github.com/zam-ia/dragonballistics-pro/actions/runs/42314778122/artifacts/13548864714
+https://github.com/zam-ia/dragonballistics-pro/actions/runs/42315593860/artifacts/13550343269
 
 Archivos almacenados: solver-desktop.png y solver-mobile.png.
-Los tests verifican visibilidad y ausencia de desbordamiento. La revisión
-editorial visual manual de esas capturas sigue siendo recomendable.
+Los tests verifican visibilidad, ausencia de desbordamiento y separación
+vertical de los botones móviles. Ambas capturas fueron inspeccionadas.
 
 ## Rendimiento observado
 
 En Chromium del runner de GitHub, el benchmark instrumentado del Worker real
-registró: creación 0.2 ms, primer progreso 115.4 ms, trabajo completo
-371.3 ms, cuatro impactos verificados y 73 ticks del temporizador principal.
+registró: creación 0.2 ms, primer progreso 148.0 ms, trabajo completo
+520.2 ms, cuatro impactos verificados y 102 ticks del temporizador principal.
 La cancelación registró 0 ms redondeados de coste local, reinicio 0.2 ms,
-y 129 ticks durante búsqueda de alta resolución más sustitución.
+y 235 ticks durante búsqueda de alta resolución más sustitución.
 Los valores reflejan ese runner y resolución del reloj, no garantizan
 latencia universal ni el instante exacto de terminación interna del hilo.
 
 El benchmark numérico 3B bajo esa ejecución registró estos tiempos:
 
-- Sin viento, radio 5: 153 evaluaciones, 288.30 ms.
-- Sin viento, radio 0.8: 137 evaluaciones, 198.43 ms.
-- Viento horizontal, radio 5: 150 evaluaciones, 207.57 ms.
-- Viento horizontal, radio 0.8: 137 evaluaciones, 183.82 ms.
-- Viento vertical, radio 5: 149 evaluaciones, 220.07 ms.
-- Viento vertical, radio 0.8: 136 evaluaciones, 208.37 ms.
+- Sin viento, radio 5: 153 evaluaciones, 336.10 ms.
+- Sin viento, radio 0.8: 137 evaluaciones, 211.38 ms.
+- Viento horizontal, radio 5: 150 evaluaciones, 220.24 ms.
+- Viento horizontal, radio 0.8: 137 evaluaciones, 204.36 ms.
+- Viento vertical, radio 5: 149 evaluaciones, 241.77 ms.
+- Viento vertical, radio 0.8: 136 evaluaciones, 226.52 ms.
 
 ## Problemas resueltos y limitaciones
 
@@ -101,6 +104,8 @@ El benchmark numérico 3B bajo esa ejecución registró estos tiempos:
 - Se ajustaron fixtures de progreso para contadores matemáticamente coherentes.
 - Se hicieron exactos los selectores de potencia de Playwright, sin
   debilitar la comprobación del control principal.
+- Se corrigió la proximidad de los botones móviles y se añadió
+  una aserción geométrica de separación, más prueba de teclado y consola.
 - Una búsqueda finita no demuestra imposibilidad matemática.
 - Las trayectorias completas seleccionadas se dibujan bajo demanda en
   React; en alta resolución puede haber un coste puntual en el hilo principal.
