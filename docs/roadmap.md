@@ -36,7 +36,7 @@ Fase 3B: solucionador inverso determinista puro verificado.
 Fase 3C: ejecución mediante Worker, cancelación y aislamiento por jobId.
 Fase 3D: interfaz integrada del laboratorio, selección de soluciones,
 Canvas con arcos y aplicación voluntaria. La calidad automatizada
-alcanzó 129 pruebas Vitest y 11 Playwright en GitHub Actions.
+alcanzó 129 pruebas Vitest y 12 Playwright en GitHub Actions.
 El PR #2 permanece abierto en draft y sin merge.
 No existe autorización para avanzar automáticamente a otra fase.
 Documentos de diseño:
