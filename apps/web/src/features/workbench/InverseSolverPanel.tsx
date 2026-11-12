@@ -50,7 +50,15 @@ export function InverseSolverPanel({ simulation, previewVisible, onPreview, onAp
   const [resultValid, setResultValid] = useState(false);
   const [selected, setSelected] = useState<SolverCandidate | null>(null);
   const [comparing, setComparing] = useState(false);
-  useEffect(() => () => controller.dispose(), [controller]);
+  useEffect(
+    () => () => {
+      // React Strict Mode replays effect cleanup while preserving component
+      // state. Cancel the active Worker without permanently disposing the
+      // controller so the replayed subscription can safely attach again.
+      controller.cancel();
+    },
+    [controller],
+  );
 
   const target = useMemo(
     () => simulation.collisions.targets.find((item) => item.id === form.targetId),
@@ -403,3 +411,4 @@ export function InverseSolverPanel({ simulation, previewVisible, onPreview, onAp
     </section>
   );
 }
+
