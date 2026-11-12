@@ -2,6 +2,28 @@
 
 All notable changes to DragonBallistics Pro are recorded here.
 
+## Unreleased
+
+### Added
+
+- Phase 3D: responsive inverse solver panel in the existing workbench, configurable limits, real progress, verified candidates, and explicit apply action.
+- On-demand inverse Canvas trajectory and low/high arc comparison, preserving the original physics controls and their persistence.
+- Scenario signatures isolate four workspaces, prevent stale overlays and terminate obsolete Workers.
+- Deep Worker result validation, production-only application entrypoint, and separate Playwright Worker fixture mode.
+- Unit and Chromium acceptance tests with downloadable desktop/mobile screenshots.
+- Phase 3C typed Web Worker protocol, reusable non-React search controller, real browser integration fixture, and forced cancellation with job isolation.
+- Browser and unit coverage for Worker start, progress, verified results, replacement, failure recovery and cancellation.
+
+### Changed
+
+- Reserved a bounded physics-verification budget before refining and corrected progress hit counts to include only fully confirmed impacts.
+- Added synthetic refinement-only target coverage and real Worker performance instrumentation.
+- Reused a quartic Bernstein representation of each integrated step for collision and proximity
+  queries while retaining exact integrated impact state.
+- Precomputed force-field constants and removed redundant RK4 derivative allocations.
+- Added instrumented legacy/optimized A/B benchmarks with alternating rounds, operation counters and
+  regression coverage for curved geometry.
+
 ## 0.2.0 - 2026-11-05
 
 ### Added

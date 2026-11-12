@@ -57,7 +57,7 @@ test('recalculates trajectory controls and compares a second simulation', async 
   const initialRange = await rangeMetric.textContent();
 
   await page.getByLabel('Angulo de lanzamiento').fill('35');
-  await page.getByLabel('Potencia').fill('60');
+  await page.getByLabel('Potencia', { exact: true }).fill('60');
   await page.getByLabel('Magnitud del viento').fill('1.5');
   await expect(rangeMetric).not.toHaveText(initialRange ?? '');
 

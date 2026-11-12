@@ -6,6 +6,13 @@ interface GeometryCanvasProps {
   launch: Vec2;
   target: Vec2;
   showGrid: boolean;
+  targetRadius: number;
+  inversePath: readonly Vec2[];
+  inverseImpact: Vec2 | null;
+  inverseApex: Vec2 | null;
+  inverseComparisonPath: readonly Vec2[];
+  inverseComparisonImpact: Vec2 | null;
+  inverseComparisonApex: Vec2 | null;
   primaryPath: readonly Vec2[];
   comparisonPath: readonly Vec2[];
   primaryImpact: Vec2 | null;
@@ -33,6 +40,13 @@ export function GeometryCanvas({
   launch,
   target,
   showGrid,
+  targetRadius,
+  inversePath,
+  inverseImpact,
+  inverseApex,
+  inverseComparisonPath,
+  inverseComparisonImpact,
+  inverseComparisonApex,
   primaryPath,
   comparisonPath,
   primaryImpact,
@@ -135,18 +149,28 @@ export function GeometryCanvas({
     if (comparisonPath.length > 0) {
       drawPath(context, comparisonPath, transform, '#a78bfa', true);
     }
+    if (inversePath.length > 0) drawPath(context, inversePath, transform, '#fb7185', false);
+    if (inverseComparisonPath.length > 0) {
+      drawPath(context, inverseComparisonPath, transform, '#facc15', true);
+    }
 
-    drawTargetRadius(context, targetScreen, 10 * transform.pixelsPerUnit);
+    drawTargetRadius(context, targetScreen, targetRadius * transform.pixelsPerUnit);
     drawApex(context, worldToScreen(primaryApex, transform), '#3dd6d0');
     if (comparisonApex) {
       drawApex(context, worldToScreen(comparisonApex, transform), '#a78bfa');
     }
+    if (inverseApex) drawApex(context, worldToScreen(inverseApex, transform), '#fb7185');
+    if (inverseComparisonApex)
+      drawApex(context, worldToScreen(inverseComparisonApex, transform), '#facc15');
     if (primaryImpact) {
       drawImpact(context, worldToScreen(primaryImpact, transform), '#3dd6d0');
     }
     if (comparisonImpact) {
       drawImpact(context, worldToScreen(comparisonImpact, transform), '#a78bfa');
     }
+    if (inverseImpact) drawImpact(context, worldToScreen(inverseImpact, transform), '#fb7185');
+    if (inverseComparisonImpact)
+      drawImpact(context, worldToScreen(inverseComparisonImpact, transform), '#facc15');
 
     drawPoint(context, launchScreen, '#3dd6d0', 'LANZAMIENTO');
     drawPoint(context, targetScreen, '#f4b860', 'OBJETIVO');
@@ -154,6 +178,13 @@ export function GeometryCanvas({
     comparisonApex,
     comparisonImpact,
     comparisonPath,
+    inverseApex,
+    inverseImpact,
+    inversePath,
+    inverseComparisonApex,
+    inverseComparisonImpact,
+    inverseComparisonPath,
+    targetRadius,
     launch,
     primaryApex,
     primaryImpact,
@@ -193,6 +224,8 @@ export function GeometryCanvas({
     <div ref={frameRef} className="geometry-canvas-frame">
       <canvas
         ref={canvasRef}
+        data-inverse-overlay={inversePath.length > 0 ? 'visible' : 'hidden'}
+        data-inverse-comparison={inverseComparisonPath.length > 0 ? 'visible' : 'hidden'}
         className="geometry-canvas"
         aria-label="Plano cartesiano interactivo; arrastra el punto de lanzamiento o el objetivo"
         onPointerDown={handlePointerDown}
@@ -258,7 +291,7 @@ function drawTargetRadius(context: CanvasRenderingContext2D, point: Vec2, radius
   context.lineWidth = 1;
   context.setLineDash([3, 3]);
   context.beginPath();
-  context.arc(point.x, point.y, Math.max(7, radius), 0, Math.PI * 2);
+  context.arc(point.x, point.y, Math.max(0, radius), 0, Math.PI * 2);
   context.stroke();
   context.restore();
 }
