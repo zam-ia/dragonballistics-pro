@@ -411,4 +411,3 @@ export function InverseSolverPanel({ simulation, previewVisible, onPreview, onAp
     </section>
   );
 }
-
