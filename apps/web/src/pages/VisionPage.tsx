@@ -3,7 +3,6 @@ import {
   Camera,
   Download,
   Eye,
-  FileVideo2,
   Pause,
   Play,
   ScanEye,
@@ -200,7 +199,7 @@ export default function VisionPage() {
           regions,
         };
         inFlightRef.current = true;
-        workerRef.current.postMessage(request, [pixels.buffer as ArrayBuffer]);
+        workerRef.current.postMessage(request, [pixels.buffer]);
       } catch {
         inFlightRef.current = false;
         setProblem('No se pudo leer el fotograma de esta fuente.');
