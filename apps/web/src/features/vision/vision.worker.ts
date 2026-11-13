@@ -49,9 +49,7 @@ scope.onmessage = (event: MessageEvent<unknown>) => {
       for (let x = bounds.x; x < bounds.x + bounds.width; x += step) {
         const index = (y * width + x) * 4;
         const luminance =
-          (pixels[index]! * 0.2126 +
-            pixels[index + 1]! * 0.7152 +
-            pixels[index + 2]! * 0.0722) /
+          (pixels[index]! * 0.2126 + pixels[index + 1]! * 0.7152 + pixels[index + 2]! * 0.0722) /
           255;
         const neighborX = Math.min(width - 1, x + step);
         const neighborIndex = (y * width + neighborX) * 4;

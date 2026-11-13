@@ -1,5 +1,24 @@
-import { Activity, Camera, Download, Eye, FileVideo2, Pause, Play, ScanEye, Square, Target, Trash2, Upload } from 'lucide-react';
-import { useEffect, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  Activity,
+  Camera,
+  Download,
+  Eye,
+  FileVideo2,
+  Pause,
+  Play,
+  ScanEye,
+  Square,
+  Target,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import {
   normalizedRegion,
   VISION_KINDS,
@@ -218,7 +237,10 @@ export default function VisionPage() {
     if (geometry.width < 0.012 || geometry.height < 0.012) return;
     const label = VISION_KINDS.find((item) => item.value === regionKind)?.label ?? 'Región';
     const id = String(++nextRegionId.current);
-    setRegions((previous) => [...previous.slice(-23), { id, kind: regionKind, label, ...geometry }]);
+    setRegions((previous) => [
+      ...previous.slice(-23),
+      { id, kind: regionKind, label, ...geometry },
+    ]);
     setDrawing(false);
   }
 
@@ -266,11 +288,16 @@ export default function VisionPage() {
         <div>
           <p className="eyebrow">VISIÓN COMPUTACIONAL · MVP</p>
           <h1>DragonBallistics Vision</h1>
-          <p>Captura consentida, fotogramas y diagnóstico visual local. Los detectores físicos aún necesitan calibración.</p>
+          <p>
+            Captura consentida, fotogramas y diagnóstico visual local. Los detectores físicos aún
+            necesitan calibración.
+          </p>
         </div>
         <div className="phase-badge">
           <ScanEye size={17} aria-hidden="true" />
-          <span><strong>Laboratorio visual</strong>Sin conexión al cliente del juego</span>
+          <span>
+            <strong>Laboratorio visual</strong>Sin conexión al cliente del juego
+          </span>
         </div>
       </header>
 
@@ -281,26 +308,73 @@ export default function VisionPage() {
         <button className="button ghost" type="button" onClick={() => fileInput.current?.click()}>
           <Upload size={16} aria-hidden="true" /> Importar imagen o video
         </button>
-        <input ref={fileInput} className="visually-hidden" type="file" accept="image/png,image/jpeg,video/mp4,video/webm,.png,.jpg,.jpeg,.mp4,.webm" onChange={importFile} />
-        <button className="button ghost" type="button" disabled={source === 'none'} onClick={() => { setPaused((p) => !p); if (source === 'video') { if (paused) void videoRef.current?.play(); else videoRef.current?.pause(); } }}>
+        <input
+          ref={fileInput}
+          className="visually-hidden"
+          type="file"
+          accept="image/png,image/jpeg,video/mp4,video/webm,.png,.jpg,.jpeg,.mp4,.webm"
+          onChange={importFile}
+        />
+        <button
+          className="button ghost"
+          type="button"
+          disabled={source === 'none'}
+          onClick={() => {
+            setPaused((p) => !p);
+            if (source === 'video') {
+              if (paused) void videoRef.current?.play();
+              else videoRef.current?.pause();
+            }
+          }}
+        >
           {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
           {paused ? 'Continuar análisis' : 'Pausar análisis'}
         </button>
-        <button className="button ghost" type="button" disabled={source === 'none'} onClick={stopSource}>
+        <button
+          className="button ghost"
+          type="button"
+          disabled={source === 'none'}
+          onClick={stopSource}
+        >
           <Square size={15} aria-hidden="true" /> Detener
         </button>
-        <span className="vision-live-state" data-active={source !== 'none'}>{source === 'none' ? 'SIN FUENTE' : source === 'capture' ? 'CAPTURA CON PERMISO' : 'ARCHIVO LOCAL'}</span>
+        <span className="vision-live-state" data-active={source !== 'none'}>
+          {source === 'none'
+            ? 'SIN FUENTE'
+            : source === 'capture'
+              ? 'CAPTURA CON PERMISO'
+              : 'ARCHIVO LOCAL'}
+        </span>
       </section>
 
-      {problem ? <p role="alert" className="vision-error">{problem}</p> : null}
+      {problem ? (
+        <p role="alert" className="vision-error">
+          {problem}
+        </p>
+      ) : null}
 
       <section className="vision-layout">
         <div className="panel vision-stage-panel">
           <div className="vision-stage-header">
-            <strong><Eye size={15} aria-hidden="true" /> Fuente visual</strong>
-            <span>{dimensions.width && dimensions.height ? dimensions.width + ' × ' + dimensions.height + ' px' : 'Sin señal'} · 5 FPS máximo</span>
+            <strong>
+              <Eye size={15} aria-hidden="true" /> Fuente visual
+            </strong>
+            <span>
+              {dimensions.width && dimensions.height
+                ? dimensions.width + ' × ' + dimensions.height + ' px'
+                : 'Sin señal'}{' '}
+              · 5 FPS máximo
+            </span>
           </div>
-          <div className="vision-stage" style={{ aspectRatio: dimensions.width && dimensions.height ? String(dimensions.width) + '/' + String(dimensions.height) : '16/9' }}>
+          <div
+            className="vision-stage"
+            style={{
+              aspectRatio:
+                dimensions.width && dimensions.height
+                  ? String(dimensions.width) + '/' + String(dimensions.height)
+                  : '16/9',
+            }}
+          >
             <video
               ref={videoRef}
               className="vision-media"
@@ -308,16 +382,32 @@ export default function VisionPage() {
               muted
               playsInline
               controls={source === 'video'}
-              onLoadedMetadata={(event) => setDimensions({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })}
+              onLoadedMetadata={(event) =>
+                setDimensions({
+                  width: event.currentTarget.videoWidth,
+                  height: event.currentTarget.videoHeight,
+                })
+              }
             />
             <img
               ref={imageRef}
               className="vision-media"
               hidden={source !== 'image'}
               alt="Fotograma importado para análisis visual"
-              onLoad={(event) => setDimensions({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+              onLoad={(event) =>
+                setDimensions({
+                  width: event.currentTarget.naturalWidth,
+                  height: event.currentTarget.naturalHeight,
+                })
+              }
             />
-            {source === 'none' ? <div className="vision-empty"><ScanEye size={35} aria-hidden="true" /><strong>No hay imágenes</strong><span>Comparte una pestaña o importa una grabación para comenzar.</span></div> : null}
+            {source === 'none' ? (
+              <div className="vision-empty">
+                <ScanEye size={35} aria-hidden="true" />
+                <strong>No hay imágenes</strong>
+                <span>Comparte una pestaña o importa una grabación para comenzar.</span>
+              </div>
+            ) : null}
             <svg
               className="vision-overlay"
               viewBox="0 0 1000 1000"
@@ -328,59 +418,156 @@ export default function VisionPage() {
               onPointerDown={startDrawing}
               onPointerMove={moveDrawing}
               onPointerUp={finishDrawing}
-              onPointerCancel={() => { dragStart.current = null; setDraft(null); }}
+              onPointerCancel={() => {
+                dragStart.current = null;
+                setDraft(null);
+              }}
             >
               {regions.map((region) => (
                 <g key={region.id}>
-                  <rect x={region.x * 1000} y={region.y * 1000} width={region.width * 1000} height={region.height * 1000} className="vision-region" />
-                  <text x={region.x * 1000 + 6} y={region.y * 1000 + 20} className="vision-region-label">{region.label}</text>
+                  <rect
+                    x={region.x * 1000}
+                    y={region.y * 1000}
+                    width={region.width * 1000}
+                    height={region.height * 1000}
+                    className="vision-region"
+                  />
+                  <text
+                    x={region.x * 1000 + 6}
+                    y={region.y * 1000 + 20}
+                    className="vision-region-label"
+                  >
+                    {region.label}
+                  </text>
                 </g>
               ))}
-              {draft ? <rect x={draft.x * 1000} y={draft.y * 1000} width={draft.width * 1000} height={draft.height * 1000} className="vision-region vision-region-draft" /> : null}
+              {draft ? (
+                <rect
+                  x={draft.x * 1000}
+                  y={draft.y * 1000}
+                  width={draft.width * 1000}
+                  height={draft.height * 1000}
+                  className="vision-region vision-region-draft"
+                />
+              ) : null}
             </svg>
           </div>
           <canvas ref={samplingCanvas} hidden aria-hidden="true" />
           <div className="vision-stage-footer">
-            <span><Activity size={14} aria-hidden="true" /> {frame ? 'Fotograma ' + frame.frameId + ' · análisis ' + frame.elapsedMs.toFixed(1) + ' ms' : 'Esperando fotogramas'}</span>
+            <span>
+              <Activity size={14} aria-hidden="true" />{' '}
+              {frame
+                ? 'Fotograma ' + frame.frameId + ' · análisis ' + frame.elapsedMs.toFixed(1) + ' ms'
+                : 'Esperando fotogramas'}
+            </span>
             <div>
-              <button type="button" className="button ghost" disabled={source === 'none'} onClick={saveFrame}><Camera size={14} aria-hidden="true" /> PNG</button>
-              <button type="button" className="button ghost" disabled={source === 'none'} onClick={exportData}><Download size={14} aria-hidden="true" /> JSON</button>
+              <button
+                type="button"
+                className="button ghost"
+                disabled={source === 'none'}
+                onClick={saveFrame}
+              >
+                <Camera size={14} aria-hidden="true" /> PNG
+              </button>
+              <button
+                type="button"
+                className="button ghost"
+                disabled={source === 'none'}
+                onClick={exportData}
+              >
+                <Download size={14} aria-hidden="true" /> JSON
+              </button>
             </div>
           </div>
         </div>
 
         <aside className="panel vision-inspector">
           <div className="vision-inspector-header">
-            <h2><Target size={17} aria-hidden="true" /> Regiones de análisis</h2>
-            <p>Marca manualmente una zona del HUD o del escenario. El Worker calcula métricas visuales, no valores físicos.</p>
+            <h2>
+              <Target size={17} aria-hidden="true" /> Regiones de análisis
+            </h2>
+            <p>
+              Marca manualmente una zona del HUD o del escenario. El Worker calcula métricas
+              visuales, no valores físicos.
+            </p>
           </div>
           <label className="vision-control">
             <span>Tipo de región</span>
-            <select value={regionKind} onChange={(event) => setRegionKind(event.target.value as VisionKind)}>
-              {VISION_KINDS.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
+            <select
+              value={regionKind}
+              onChange={(event) => setRegionKind(event.target.value as VisionKind)}
+            >
+              {VISION_KINDS.map((kind) => (
+                <option key={kind.value} value={kind.value}>
+                  {kind.label}
+                </option>
+              ))}
             </select>
           </label>
           <div className="vision-inspector-actions">
-            <button type="button" className="button primary" disabled={source === 'none'} aria-pressed={drawing} onClick={() => setDrawing((value) => !value)}>
-              <Target size={14} aria-hidden="true" /> {drawing ? 'Cancelar marcado' : 'Marcar región'}
+            <button
+              type="button"
+              className="button primary"
+              disabled={source === 'none'}
+              aria-pressed={drawing}
+              onClick={() => setDrawing((value) => !value)}
+            >
+              <Target size={14} aria-hidden="true" />{' '}
+              {drawing ? 'Cancelar marcado' : 'Marcar región'}
             </button>
-            <button type="button" className="button ghost" disabled={regions.length === 0} onClick={() => setRegions([])}><Trash2 size={14} aria-hidden="true" /> Limpiar</button>
+            <button
+              type="button"
+              className="button ghost"
+              disabled={regions.length === 0}
+              onClick={() => setRegions([])}
+            >
+              <Trash2 size={14} aria-hidden="true" /> Limpiar
+            </button>
           </div>
-          {drawing ? <p className="vision-instruction" role="status">Arrastra sobre la imagen para delimitar la región.</p> : null}
+          {drawing ? (
+            <p className="vision-instruction" role="status">
+              Arrastra sobre la imagen para delimitar la región.
+            </p>
+          ) : null}
           <div className="vision-region-list">
-            {regions.length === 0 ? <p className="vision-muted">No hay regiones marcadas. Puedes empezar por el indicador del viento.</p> : null}
+            {regions.length === 0 ? (
+              <p className="vision-muted">
+                No hay regiones marcadas. Puedes empezar por el indicador del viento.
+              </p>
+            ) : null}
             {regions.map((region) => {
               const metric = frame?.regions.find((item) => item.regionId === region.id);
               return (
                 <article className="vision-region-card" key={region.id}>
                   <div className="vision-region-card-head">
-                    <strong>{region.label} #{region.id}</strong>
-                    <button type="button" aria-label={'Eliminar región ' + region.id} onClick={() => setRegions((items) => items.filter((item) => item.id !== region.id))}><Trash2 size={14} /></button>
+                    <strong>
+                      {region.label} #{region.id}
+                    </strong>
+                    <button
+                      type="button"
+                      aria-label={'Eliminar región ' + region.id}
+                      onClick={() =>
+                        setRegions((items) => items.filter((item) => item.id !== region.id))
+                      }
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                   <div className="vision-metrics">
-                    <span>Brillo <b>{metric ? (metric.meanBrightness * 100).toFixed(1) + '%' : '—'}</b></span>
-                    <span>Bordes <b>{metric ? (metric.edgeActivity * 100).toFixed(1) + '%' : '—'}</b></span>
-                    <span>Cambio visual <b>{metric?.motionActivity == null ? '—' : (metric.motionActivity * 100).toFixed(1) + '%'}</b></span>
+                    <span>
+                      Brillo <b>{metric ? (metric.meanBrightness * 100).toFixed(1) + '%' : '—'}</b>
+                    </span>
+                    <span>
+                      Bordes <b>{metric ? (metric.edgeActivity * 100).toFixed(1) + '%' : '—'}</b>
+                    </span>
+                    <span>
+                      Cambio visual{' '}
+                      <b>
+                        {metric?.motionActivity == null
+                          ? '—'
+                          : (metric.motionActivity * 100).toFixed(1) + '%'}
+                      </b>
+                    </span>
                   </div>
                   <small>Lectura física: pendiente de calibración</small>
                 </article>
@@ -389,7 +576,11 @@ export default function VisionPage() {
           </div>
           <div className="vision-disclaimer">
             <strong>Qué reconoce esta versión</strong>
-            <p>Procesa imágenes y mide actividad en zonas que marques. Todavía no interpreta la magnitud del viento, identifica vehículos ni calcula el efecto físico de remolinos. Necesitamos ejemplos reales etiquetados.</p>
+            <p>
+              Procesa imágenes y mide actividad en zonas que marques. Todavía no interpreta la
+              magnitud del viento, identifica vehículos ni calcula el efecto físico de remolinos.
+              Necesitamos ejemplos reales etiquetados.
+            </p>
           </div>
         </aside>
       </section>
