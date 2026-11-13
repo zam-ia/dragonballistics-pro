@@ -4,6 +4,7 @@ import {
   Download,
   FlaskConical,
   Settings2,
+  ScanEye,
   ShieldCheck,
   Upload,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import {
 const navigation = [
   { to: '/', label: 'Laboratorio', icon: Crosshair, end: true },
   { to: '/research', label: 'Investigacion', icon: BookOpenCheck, end: false },
+  { to: '/vision', label: 'Vision', icon: ScanEye, end: false },
   { to: '/settings', label: 'Ajustes', icon: Settings2, end: false },
 ];
 
