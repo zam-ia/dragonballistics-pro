@@ -6,6 +6,8 @@ import { useLabStore } from '../store/lab-store';
 
 const WorkbenchPage = lazy(async () => import('../pages/WorkbenchPage'));
 const ResearchPage = lazy(async () => import('../pages/ResearchPage'));
+const VisionPage = lazy(async () => import('../pages/VisionPage'));
+
 const SettingsPage = lazy(async () => import('../pages/SettingsPage'));
 const NotFoundPage = lazy(async () => import('../pages/NotFoundPage'));
 
@@ -27,6 +29,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<WorkbenchPage />} />
           <Route path="/research" element={<ResearchPage />} />
+          <Route path="/vision" element={<VisionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFoundPage />} />
